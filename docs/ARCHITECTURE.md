@@ -52,8 +52,12 @@ lock in place.
 ## Pre-registration lock
 
 - `lock_prereg.py` requires L0 to have passed on the current code, and `gates.approval: APPROVED`.
-- The lock is one sha256 over `prereg.md`, `checks.py` and `src/evaluate.py` (LF line endings), the
-  `gates` and `scorecard_map` blocks (canonical JSON) and `labcore.__version__`.
+- The lock is one sha256 over `prereg.md`, `checks.py` and every file under `src/` (LF line endings),
+  the `gates` and `scorecard_map` blocks (canonical JSON) and `labcore.__version__` (hash scheme 2,
+  recorded as `hash_scheme` in the lock). A lock without that field is scheme 1 and covers only
+  `src/evaluate.py` of `src/`; it is still checked that way, so earlier locks stay valid.
+  Because all of `src/` is covered, any edit there after the lock breaks it: fix `requirements.txt`
+  or a config without a run instead, or open a new round.
 - While a direction is `L1_RUNNING` the current labcore version counts, so a version bump breaks its
   lock. A finished direction is compared under the version recorded in its lock (`stats_version`).
   `tests/test_stats_version.py` fails if `labcore/stats` changes without a bump.

@@ -14,7 +14,9 @@ ALWAYS_KEPT = ("status.json", "env.json")
 MAX_RESULT_BYTES = 5 * 1024 * 1024
 
 
-def copy_results(output_dir: Path, result_dir: Path, required: list[str]) -> list[str]:
+def copy_results(
+    output_dir: Path, result_dir: Path, required: list[str], columns: dict | None = None
+) -> list[str]:
     """Copy only the declared outputs into the repo. Data files, large files and files with
     phenotype columns are refused.
 
@@ -32,7 +34,7 @@ def copy_results(output_dir: Path, result_dir: Path, required: list[str]) -> lis
             problems.append(f"refusing to store data-like output: {name}")
         elif source.stat().st_size > MAX_RESULT_BYTES:
             problems.append(f"output is larger than {MAX_RESULT_BYTES} bytes and was not stored: {name}")
-        elif found := file_problems(source, name):
+        elif found := file_problems(source, name, columns):
             problems += [f"not stored: {problem}" for problem in found]
         else:
             target = result_dir / name
@@ -41,7 +43,7 @@ def copy_results(output_dir: Path, result_dir: Path, required: list[str]) -> lis
     return problems
 
 
-def generic_checks(result_dir: Path, required: list[str]) -> list[str]:
+def generic_checks(result_dir: Path, required: list[str], columns: dict | None = None) -> list[str]:
     result_dir = Path(result_dir)
     problems = []
     try:
@@ -62,7 +64,7 @@ def generic_checks(result_dir: Path, required: list[str]) -> list[str]:
     # Also in L0, so that a forbidden column is found before any GPU time is spent.
     for name in dict.fromkeys((*ALWAYS_KEPT, *required)):
         if (result_dir / name).is_file():
-            problems += file_problems(result_dir / name, name)
+            problems += file_problems(result_dir / name, name, columns)
     return problems
 
 

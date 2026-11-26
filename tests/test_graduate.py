@@ -11,6 +11,7 @@ from labtestkit import TOY, approve_and_lock, commit_all, git, tool
 
 from labcore import registry
 from labcore.io import write_json, write_text_atomic
+from labcore.verdict.prereg import prereg_hash
 
 graduate = tool("graduate")
 validate = tool("validate")
@@ -114,7 +115,9 @@ def test_changed_gates_block_graduation(go_lab, tmp_path):
 
 
 def test_uncommitted_work_blocks_graduation(go_lab, tmp_path):
-    (go_lab / "directions" / TOY / "src" / "new.py").write_text("x = 1\n")
+    notes = go_lab / "directions" / TOY / "notebooks"
+    notes.mkdir(exist_ok=True)
+    (notes / "scratch.md").write_text("not committed\n")  # outside the lock, inside the direction
     with pytest.raises(graduate.GraduationError, match="commit these changes"):
         graduate.graduate(go_lab, TOY, tmp_path / "out")
 
@@ -143,6 +146,10 @@ def test_lab_only_imports_are_refused(go_lab, tmp_path):
     module = go_lab / "directions" / TOY / "src" / "main.py"
     text = module.read_text(encoding="utf-8")
     write_text_atomic(module, text + "\n\ndef helper():\n    from tools import validate\n")
+    # src/ is locked: a lock made after this edit is what an author would have had
+    lock = registry.load(go_lab / "registry.yaml")["directions"][TOY]["prereg_lock"]
+    digest = prereg_hash(go_lab / "directions" / TOY, version=lock["stats_version"])
+    registry.set_status(go_lab, TOY, "VERDICT", prereg_lock={**lock, "hash": digest})
     commit_all(go_lab, "bad import")
     with pytest.raises(graduate.GraduationError, match="imports tools"):
         graduate.graduate(go_lab, TOY, tmp_path / "out")

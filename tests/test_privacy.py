@@ -175,3 +175,70 @@ def test_a_phenotype_metric_name_is_rejected_before_any_run(toy_lab):
     write_text_atomic(path, text.replace(marker, "\n".join((metric, marker))))
     with pytest.raises(ConfigError, match="phenotype"):
         load_direction(toy_lab / "directions" / TOY)
+
+
+def test_results_columns_refuse_a_neutral_name_that_the_blocklist_cannot_know(tmp_path):
+    table = tmp_path / "per_subject.csv"
+    table.write_text("subject_id,arm,dice,var_7\n1,raw,0.5,63\n", encoding="utf-8")
+    assert file_problems(table, "per_subject.csv") == []  # nothing in the name list matches var_7
+    allowed = {"per_subject.csv": ["subject_id", "arm", "dice"]}
+    [problem] = file_problems(table, "per_subject.csv", allowed)
+    assert "var_7" in problem and "results_columns" in problem and "63" not in problem
+    table.write_text("subject_id,arm,dice\n1,raw,0.5\n", encoding="utf-8")
+    assert file_problems(table, "per_subject.csv", allowed) == []
+
+
+def test_results_columns_need_every_table_output_listed(tmp_path):
+    table = tmp_path / "other.csv"
+    table.write_text("a,b\n1,2\n", encoding="utf-8")
+    [problem] = file_problems(table, "other.csv", {"per_subject.csv": ["a", "b"]})
+    assert "does not list" in problem
+    summary = tmp_path / "summary.json"
+    summary.write_text('{"n": 1}', encoding="utf-8")  # JSON is not covered by the table allowlist
+    assert file_problems(summary, "summary.json", {"per_subject.csv": []}) == []
+
+
+def test_tree_problems_and_the_ci_script_apply_results_columns(tmp_path):
+    results = tmp_path / "results" / "toy" / "exp_001" / "run-1"
+    results.mkdir(parents=True)
+    (results / "per_subject.csv").write_text("subject_id,var_7\n1,63\n", encoding="utf-8")
+    assert tree_problems(tmp_path / "results") == []
+    assert tree_problems(results, {"per_subject.csv": ["subject_id"]})
+    directions = tmp_path / "directions"
+    directions.mkdir()
+    import shutil
+    shutil.copytree(REPO / "directions" / "_template", directions / "toy")
+    text = (directions / "toy" / "direction.yaml").read_text(encoding="utf-8")
+    text = text.replace("__SLUG__", "toy").replace("__TITLE_JSON__", '"Toy"')
+    (directions / "toy" / "direction.yaml").write_text(
+        text + "results_columns:\n  per_subject.csv: [subject_id]\n", encoding="utf-8"
+    )
+    found = privacy_check.results_problems(tmp_path)
+    assert any("var_7" in p and "results_columns" in p for p in found)
+    (results / "per_subject.csv").write_text("subject_id\n1\n", encoding="utf-8")
+    assert privacy_check.results_problems(tmp_path) == []
+
+
+def test_the_direction_schema_accepts_results_columns():
+    import jsonschema
+
+    from labcore.schema import load_schema
+    schema = load_schema("direction")
+    props = schema["properties"]
+    assert "results_columns" in props
+    jsonschema.validate({"per_subject.csv": ["subject_id", "dice"]}, props["results_columns"])
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate({"per_subject.csv": "subject_id"}, props["results_columns"])
+
+
+def test_the_watcher_refuses_to_store_an_unlisted_column(tmp_path):
+    out, stored = tmp_path / "out", tmp_path / "stored"
+    out.mkdir()
+    (out / "status.json").write_text('{"ok": true}', encoding="utf-8")
+    (out / "per_subject.csv").write_text("subject_id,var_7\n1,63\n", encoding="utf-8")
+    columns = {"per_subject.csv": ["subject_id", "dice"]}
+    problems = copy_results(out, stored, ["per_subject.csv"], columns)
+    assert any("var_7" in p and "not stored" in p for p in problems)
+    assert not (stored / "per_subject.csv").exists()
+    assert (stored / "status.json").exists()
+    assert copy_results(out, tmp_path / "plain", ["per_subject.csv"]) == []  # no allowlist, old behaviour

@@ -8,6 +8,7 @@ from labcore.kaggle.bundle import tree_hash
 
 STATS_DIGESTS = {
     "0.1.0": "sha256:453574feaba4be13c210e0b6828c52d34e5d78a5b911cdf3e5d89cf5bbb40180",
+    "0.2.0": "sha256:c283857d86b79ac4218d5474de24f2e14067afa79070058d0b912fc95ccd0819",
 }
 
 

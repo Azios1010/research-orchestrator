@@ -67,7 +67,7 @@ def lock_state(source_root: Path, slug: str) -> tuple[str, int]:
         raise NotLockedError(f"{slug}: gates are not APPROVED")
     lock = item.get("prereg_lock") or {}
     try:
-        current = prereg_hash(direction_dir)
+        current = prereg_hash(direction_dir, scheme=lock.get("hash_scheme", 1))
     except (OSError, ValueError) as exc:
         raise NotLockedError(f"{slug}: the lock cannot be checked: {exc}") from exc
     if lock.get("hash") != current:

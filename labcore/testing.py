@@ -90,5 +90,5 @@ def l0_scorecard(run: L0Run) -> dict:
 
 def l0_problems(run: L0Run) -> list[str]:
     """Generic and direction-specific sanity checks, exactly as the watcher applies them."""
-    problems = generic_checks(run.out_dir, run.direction["outputs"])
+    problems = generic_checks(run.out_dir, run.direction["outputs"], run.direction.get("results_columns"))
     return problems + direction_checks(run.direction_dir / "checks.py", run.out_dir)

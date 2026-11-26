@@ -17,7 +17,7 @@ description: Investigate a failed run (argument run_id) from its log and status,
 5. Fix on a branch, add a test that fails without the fix, run
    `python tools/validate.py --run-l0 <slug>`, open a pull request linking the issue.
 
-**Never touch gates, `prereg.md`, `scorecard_map`, `checks.py` or `src/evaluate.py` of a locked
+**Never touch gates, `prereg.md`, `scorecard_map`, `checks.py` or anything under `src/` of a locked
 direction.** Do not make a failing check pass by weakening it, dropping
 subjects or changing evaluation code. If the locked design is the problem, say so and stop. Do not edit
 `state/` or `results/`, and do not re-run anything on Kaggle unless the owner asks.

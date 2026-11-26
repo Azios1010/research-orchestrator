@@ -50,6 +50,7 @@ LOCKED_EDITS = {
     "scorecard_map": ("direction.yaml", "path: contrasts.a-b.ci_lo}", "path: contrasts.a-b.mean_delta}"),
     "checks.py": ("checks.py", "usable * 5 < requested * 4", "usable * 5 < requested * 1"),
     "evaluate.py": ("src/evaluate.py", 'scores["a"].mean()', 'scores["a"].median()'),
+    "another src module": ("src/main.py", "def run(", "def run_(", ),
     "labcore.__version__": None,
 }
 
@@ -95,12 +96,44 @@ def test_hash_ignores_what_is_not_locked(toy_lab):
     edit(directory / "direction.yaml", "# DRAFT: pending", "# reworded comment: pending")
     edit(directory / "direction.yaml", 'owner_notes: ""', 'owner_notes: "note"')
     registry.set_status(toy_lab, TOY, "L0_PASS")
-    with open(directory / "src" / "main.py", "a", encoding="utf-8") as handle:
-        handle.write("# main.py is not covered\n")
+    (directory / "src" / "__pycache__").mkdir()
+    (directory / "src" / "__pycache__" / "main.cpython-313.pyc").write_bytes(b"cache")
     with open(toy_lab / "labcore" / "io.py", "a", encoding="utf-8") as handle:
         handle.write("# labcore counts only through its version\n")
 
     assert prereg_hash(directory) == original
+
+
+def test_scheme_two_covers_all_of_src_and_scheme_one_does_not(toy_lab):
+    directory = toy_lab / "directions" / TOY
+    one, two = prereg_hash(directory, scheme=1), prereg_hash(directory, scheme=2)
+    assert one != two
+    with open(directory / "src" / "main.py", "a", encoding="utf-8") as handle:
+        handle.write("# any change to a src module\n")
+    (directory / "src" / "helper.py").write_text("X = 1\n")
+    assert prereg_hash(directory, scheme=1) == one  # the old lock never saw src/main.py
+    assert prereg_hash(directory, scheme=2) != two
+    with pytest.raises(ValueError, match="scheme"):
+        prereg_hash(directory, scheme=3)
+
+
+def test_new_locks_use_scheme_two_and_old_locks_stay_valid(toy_lab):
+    locked = approve_and_lock(toy_lab, TOY)
+    assert locked["hash_scheme"] == 2
+    assert entry(toy_lab)["prereg_lock"]["hash_scheme"] == 2
+    directory = toy_lab / "directions" / TOY
+    # A lock made before scheme 2: no hash_scheme field, hash over the old parts only.
+    old = {k: v for k, v in locked.items() if k != "hash_scheme"}
+    old["hash"] = prereg_hash(directory, scheme=1)
+    registry.set_status(toy_lab, TOY, "L1_RUNNING", prereg_lock=old)
+    assert lock_check.check(toy_lab) == []
+    with open(directory / "src" / "main.py", "a", encoding="utf-8") as handle:
+        handle.write("# still not covered by a scheme 1 lock\n")
+    assert lock_check.check(toy_lab) == []
+    # and the same edit is caught under a scheme 2 lock
+    two = {**old, "hash": locked["hash"], "hash_scheme": 2}
+    registry.set_status(toy_lab, TOY, "L1_RUNNING", prereg_lock=two)
+    assert "changed after the lock" in lock_check.check(toy_lab)[0]
 
 
 def test_the_version_is_read_without_running_the_checkout(toy_lab):

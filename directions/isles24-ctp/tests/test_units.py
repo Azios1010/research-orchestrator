@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.stats import chi2
 
 for module in ("torch", "nibabel", "pyarrow", "scipy"):
     pytest.importorskip(module)
@@ -96,8 +97,8 @@ def result_rows(n=12, seed=3):
             rows.append(
                 {
                     "subject_id": f"sub-{i:02d}", "arm": arm, "dice": float(rng.random()),
-                    "gt_ml": [1.0, 10.0, 80.0][i % 3], "abs_vol_err_ml": float(rng.random()),
-                    "fold": i % 3,
+                    "gt_empty": False, "gt_ml": [1.0, 10.0, 80.0][i % 3],
+                    "abs_vol_err_ml": float(rng.random()), "fold": i % 3,
                 }
             )
     return pd.DataFrame(rows)
@@ -120,6 +121,8 @@ def test_statistics_equal_the_notebook_computation():
                 "contrast": f"{a} - {b}", "n": len(d), "mean_delta": d.mean(), "ci95_lo": lo, "ci95_hi": hi,
                 "sd_delta": d.std(ddof=1), "share_patients_a_better": (d > 0).mean(),
                 "MDE_at_n149 (2.8*sd/sqrt149)": 2.8 * d.std(ddof=1) / np.sqrt(149),
+                "MDE_UCL80_at_n149": 2.8 * d.std(ddof=1) * np.sqrt((len(d) - 1) / chi2.ppf(0.20, len(d) - 1))
+                / np.sqrt(149),
             }
         )
     expected = pd.DataFrame(expected)
@@ -130,13 +133,57 @@ def test_statistics_equal_the_notebook_computation():
     )
 
 
+def test_empty_mask_subjects_are_left_out_of_every_statistic():
+    res = result_rows()
+    empty = ["sub-00", "sub-05"]
+    res.loc[res.subject_id.isin(empty), "gt_empty"] = True
+    res.loc[res.subject_id.isin(empty), "dice"] = 1.0  # what an empty prediction would score
+    table, exact = evaluate.paired_statistics(res, {**CONFIG, "n_boot": 500})
+    assert set(table["n"]) == {10} and exact["raw-maps"]["n"] == 10
+    kept = result_rows()
+    kept = kept[~kept.subject_id.isin(empty)]
+    config = {**CONFIG, "n_boot": 500}
+    same_table, same_exact = evaluate.paired_statistics(kept.assign(gt_empty=False), config)
+    pd.testing.assert_frame_equal(table, same_table)
+    assert exact == same_exact
+    assert evaluate.lesion_strata(res)["n"].sum() == 10
+
+
+def test_mde_with_the_upper_bound_is_in_the_contrasts():
+    _, exact = evaluate.paired_statistics(result_rows(), {**CONFIG, "n_boot": 500})
+    stat = exact["raw-maps"]
+    expected = 2.8 * stat["sd_delta"] * np.sqrt(11 / chi2.ppf(0.20, 11)) / np.sqrt(149)
+    assert stat["mde149_ucl"] == pytest.approx(expected, rel=1e-9)
+    assert stat["mde149_ucl"] > stat["mde149"]
+
+
+def test_a_contrast_needs_two_subjects_with_a_lesion():
+    res = result_rows(n=3)
+    res.loc[res.subject_id.isin(["sub-00", "sub-01"]), "gt_empty"] = True
+    with pytest.raises(ValueError, match="fewer than 2"):
+        evaluate.paired_statistics(res, {**CONFIG, "n_boot": 100})
+
+
+def test_too_many_empty_masks_stop_the_run_before_training():
+    def case(empty):
+        mask = np.zeros((2, 4, 4), bool)
+        if not empty:
+            mask[0, 0, 0] = True
+        return {"mask": mask}, {}
+
+    cfg = {"max_empty_gt_frac": 0.25}
+    main.check_empty_masks(cfg, {f"s{i}": case(i < 1) for i in range(4)})  # exactly 25%: allowed
+    with pytest.raises(RuntimeError, match="2/4 usable cases have an empty lesion mask"):
+        main.check_empty_masks(cfg, {f"s{i}": case(i < 2) for i in range(4)})
+
+
 def test_lesion_strata():
     table = evaluate.lesion_strata(result_rows())
     assert list(table["n"]) == [4, 4, 4]
     assert list(table["lesion_size"].astype(str)) == ["<5 mL", "5-30 mL", ">30 mL"]
 
 
-def write_results(folder, requested=10, statuses=None, rows=None):
+def write_results(folder, requested=10, statuses=None, rows=None, excluded_empty=0):
     statuses = statuses or ["ok"] * requested
     usable = [i for i, s in enumerate(statuses) if s == "ok"]
     if rows is None:
@@ -149,8 +196,14 @@ def write_results(folder, requested=10, statuses=None, rows=None):
         )
     rows.to_csv(folder / "per_patient.csv", index=False)
     pd.DataFrame({"status": statuses}).to_csv(folder / "cases.csv", index=False)
+    excluded = excluded_empty
     (folder / "summary.json").write_text(
-        json.dumps({"config": {"arms": list(arms.ARMS), "n_folds": 3}, "n_requested": requested})
+        json.dumps(
+            {
+                "config": {"arms": list(arms.ARMS), "n_folds": 3}, "n_requested": requested,
+                "n_excluded_empty_gt": excluded, "n_primary": len(usable) - excluded,
+            }
+        )
     )
     return folder
 
@@ -170,6 +223,20 @@ def test_checks_pass_at_exactly_80_percent_usable(tmp_path):
 def test_checks_on_cases(tmp_path, statuses, expected):
     problems = "\n".join(checks.check(write_results(tmp_path, statuses=statuses)))
     assert expected in problems
+
+
+def test_checks_on_empty_masks(tmp_path):
+    assert checks.check(write_results(tmp_path, requested=12, excluded_empty=3)) == []  # exactly 25%
+    problems = "\n".join(checks.check(write_results(tmp_path, requested=12, excluded_empty=4)))
+    assert "4/12 usable cases have an empty lesion mask" in problems
+    folder = write_results(tmp_path, requested=12, excluded_empty=1)
+    summary = json.loads((folder / "summary.json").read_text())
+    summary["n_primary"] = 5
+    (folder / "summary.json").write_text(json.dumps(summary))
+    assert "is not the 12 usable" in "\n".join(checks.check(folder))
+    summary.update(n_primary=1, n_excluded_empty_gt=11)
+    (folder / "summary.json").write_text(json.dumps(summary))
+    assert "only 1 subject(s) in the paired statistics" in "\n".join(checks.check(folder))
 
 
 def test_grid_mismatch_at_exactly_20_percent_is_allowed(tmp_path):
@@ -331,3 +398,47 @@ def test_resume_only_with_identical_settings(tmp_path):
     pd.DataFrame([{"arm": "raw", "fold": 0}]).to_csv(tmp_path / "per_patient.csv", index=False)
     assert main.resume_rows(tmp_path, "key-1") == [{"arm": "raw", "fold": 0}]
     assert main.resume_rows(tmp_path, "key-2") == []
+
+
+def verdict_for(**metrics):
+    from labcore.config import load_direction
+    from labcore.verdict.verdict import compute_verdict
+
+    values = {
+        "mean(raw-maps)": 0.03, "ci_hi(raw-maps)": 0.06, "ci_lo(raw-N1)": 0.01, "mde149_ucl(raw-maps)": 0.015,
+    }
+    values.update(metrics)
+    gates = load_direction(DIRECTION)["gates"]
+    return compute_verdict(gates, {"pipeline_ok": True, "metrics": values})
+
+
+@pytest.mark.parametrize(
+    ("change", "expected"),
+    [
+        ({}, "GO"),
+        ({"mde149_ucl(raw-maps)": 0.02}, "GO"),  # exactly at the smallest effect of interest
+        ({"mde149_ucl(raw-maps)": 0.021}, "PARK"),  # a 149-patient study could not detect 0.02
+        ({"ci_hi(raw-maps)": 0.019}, "PARK"),  # the whole interval is below 0.02
+        ({"ci_hi(raw-maps)": 0.02}, "GO"),
+        ({"mean(raw-maps)": 0.0}, "REVISE"),  # powered, not ruled out, but no positive mean
+        ({"mean(raw-maps)": -0.01}, "REVISE"),
+        ({"ci_lo(raw-N1)": 0.0}, "REVISE"),  # raw does not beat the temporal-mean control
+        ({"mde149_ucl(raw-maps)": 0.05, "ci_hi(raw-maps)": 0.0}, "PARK"),
+    ],
+)
+def test_gate_verdicts(change, expected):
+    assert verdict_for(**change).verdict == expected
+
+
+def test_go_and_park_are_never_both_true():
+    for mean in (-0.01, 0.0, 0.01, 0.03):
+        for ci_hi in (-0.01, 0.01, 0.019999, 0.02, 0.03, 0.06):
+            for ci_lo_n1 in (-0.02, 0.0, 0.01):
+                for mde_ucl in (0.005, 0.0199, 0.02, 0.0201, 0.03, 0.1):
+                    result = verdict_for(**{
+                        "mean(raw-maps)": mean, "ci_hi(raw-maps)": ci_hi, "ci_lo(raw-N1)": ci_lo_n1,
+                        "mde149_ucl(raw-maps)": mde_ucl,
+                    })
+                    both = result.gates["GO"]["result"] and result.gates["PARK"]["result"]
+                    assert not both, (mean, ci_hi, ci_lo_n1, mde_ucl)
+                    assert not result.notes

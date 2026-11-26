@@ -6,13 +6,26 @@ import numpy as np
 import pandas as pd
 import torch
 
-from labcore.stats.paired import paired_summary
+from labcore.stats.paired import mde_ucl, paired_summary
 
 from .arms import arm_input
 
 CONTRASTS = [("raw", "maps"), ("raw", "N1"), ("raw", "N2"), ("maps", "N1")]
 FULL_STUDY_N = 149  # the minimum detectable effect is always quoted at the full cohort size
 MDE_COLUMN = "MDE_at_n149 (2.8*sd/sqrt149)"
+MDE_UCL_COLUMN = "MDE_UCL80_at_n149"  # the same, with the sd replaced by its 80% upper confidence bound
+
+
+def primary_subjects(results: pd.DataFrame) -> pd.DataFrame:
+    """Rows of the subjects the paired statistics are computed on.
+
+    A subject whose lesion mask is empty after downsampling has no Dice that means anything: an empty
+    prediction would score 1 and any other prediction 0. Such subjects are still trained and
+    evaluated, but left out of every contrast, and counted in summary.json.
+    """
+    if "gt_empty" not in results:
+        return results
+    return results[~results["gt_empty"].astype(bool)]
 
 
 @torch.no_grad()
@@ -30,13 +43,14 @@ def eval_patients(model, data: dict, arm: str, sids: list[str], perms: dict, dev
         pred = (torch.cat(probs)[:, 0].numpy() > 0.5) & d["brain"]
         gt = d["mask"]
         inter, s = (pred & gt).sum(), pred.sum() + gt.sum()
-        dice = 1.0 if s == 0 else 2 * inter / s
+        dice = 1.0 if s == 0 else 2 * inter / s  # for an empty mask see primary_subjects()
         v = meta["vox_ml_down"]
         rows.append(
             {
                 "subject_id": sid,
                 "arm": arm,
                 "dice": float(dice),
+                "gt_empty": bool(gt.sum() == 0),
                 "gt_ml": float(gt.sum() * v),
                 "pred_ml": float(pred.sum() * v),
                 "abs_vol_err_ml": float(abs(pred.sum() - gt.sum()) * v),
@@ -50,7 +64,7 @@ def paired_statistics(results: pd.DataFrame, cfg: dict) -> tuple[pd.DataFrame, d
 
     All contrasts draw from one bootstrap stream in the fixed CONTRASTS order.
     """
-    wide = results.pivot_table(index="subject_id", columns="arm", values="dice")
+    wide = primary_subjects(results).pivot_table(index="subject_id", columns="arm", values="dice")
     boot_rng = np.random.default_rng(cfg["seed"] + 3)
     rows, exact = [], {}
     for a, b in CONTRASTS:
@@ -59,6 +73,9 @@ def paired_statistics(results: pd.DataFrame, cfg: dict) -> tuple[pd.DataFrame, d
         s = paired_summary(
             wide[a].to_numpy(), wide[b].to_numpy(), n_boot=cfg["n_boot"], rng=boot_rng, mde_n=FULL_STUDY_N
         )
+        if s["n"] < 2:
+            raise ValueError(f"contrast {a} - {b}: fewer than 2 subjects with a non-empty lesion mask")
+        s["mde_ucl"] = mde_ucl(s["sd_delta"], s["n"], FULL_STUDY_N, 0.80)
         rows.append(
             {
                 "contrast": f"{a} - {b}",
@@ -69,6 +86,7 @@ def paired_statistics(results: pd.DataFrame, cfg: dict) -> tuple[pd.DataFrame, d
                 "sd_delta": s["sd_delta"],
                 "share_patients_a_better": s["share_a_better"],
                 MDE_COLUMN: s["mde"],
+                MDE_UCL_COLUMN: s["mde_ucl"],
             }
         )
         exact[f"{a}-{b}"] = {
@@ -79,12 +97,14 @@ def paired_statistics(results: pd.DataFrame, cfg: dict) -> tuple[pd.DataFrame, d
             "sd_delta": s["sd_delta"],
             "share_a_better": s["share_a_better"],
             "mde149": s["mde"],
+            "mde149_ucl": s["mde_ucl"],
         }
     return pd.DataFrame(rows).round(4), exact
 
 
 def lesion_strata(results: pd.DataFrame) -> pd.DataFrame:
     """Mean Dice by follow-up lesion size (pilot only: the groups are very small)."""
+    results = primary_subjects(results)
     wide = results.pivot_table(index="subject_id", columns="arm", values="dice")
     gt_ml = results.groupby("subject_id")["gt_ml"].first()
     bins = pd.cut(gt_ml, [-0.1, 5, 30, 1e6], labels=["<5 mL", "5-30 mL", ">30 mL"])

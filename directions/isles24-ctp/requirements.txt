@@ -1,0 +1,11 @@
+# Installed on Kaggle only if missing (the Kaggle image already ships most of these).
+# Unpinned on purpose, so a preinstalled GPU build of torch is never replaced.
+torch
+numpy
+pandas
+scipy
+pyarrow
+nibabel
+huggingface_hub
+pyyaml
+matplotlib

@@ -1,0 +1,169 @@
+# Submit L1 runs to Kaggle and record them in state/ on main.
+#
+# Triggers:
+#   push to main changing directions/*/configs/**   dispatches those configs (unlocked ones are skipped)
+#   label "run-l1" on a pull request                runs CI first, then dispatches its changed configs
+#   manual run                                      one slug/exp, or the queue
+#
+# The dispatcher always runs main's code. A labelled pull request is only read and bundled: its
+# code runs on Kaggle, not on this runner. Review it before adding the label.
+name: dispatch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "directions/*/configs/**"
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: Direction slug (leave empty when draining the queue)
+        required: false
+        type: string
+      exp:
+        description: Experiment name, a file in configs/ without .yaml
+        required: false
+        type: string
+      force:
+        description: Repeat a run that already completed with identical code and config
+        required: false
+        default: false
+        type: boolean
+      drain_queue:
+        description: Submit queued runs instead of slug/exp
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.label.name == 'run-l1' &&
+      github.actor == github.repository_owner &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/ci-l0.yml
+    permissions:
+      contents: read
+
+  dispatch:
+    needs: ci
+    if: >-
+      ${{ !cancelled() &&
+      ((github.event_name != 'pull_request' && needs.ci.result == 'skipped') ||
+      (github.event_name == 'pull_request' && needs.ci.result == 'success')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # commits state/
+    # Shared with watcher.yml: only one job at a time reads and writes state/.
+    concurrency:
+      group: lab-state
+      cancel-in-progress: false
+      # UNVERIFIED: queue: max keeps every waiting run instead of cancelling all but the newest.
+      queue: max
+    steps:
+      - name: Check out main (code that runs here, and state/)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Check out the pull request (read only, never executed here)
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr-code
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install the lab and the Kaggle CLI
+        # kaggle 2.2.5 imports "six" without declaring it.
+        run: python -m pip install -e . "kaggle==2.2.5" six
+      - name: Dispatch
+        env:
+          # UNVERIFIED: set either KAGGLE_USERNAME + KAGGLE_KEY, or KAGGLE_API_TOKEN.
+          # KAGGLE_USERNAME is needed in both cases: it names the kernel.
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          INPUT_SLUG: ${{ inputs.slug }}
+          INPUT_EXP: ${{ inputs.exp }}
+          INPUT_FORCE: ${{ inputs.force }}
+          INPUT_DRAIN: ${{ inputs.drain_queue }}
+        run: |
+          dispatch() { python -m labcore.runs.dispatch --root . "$@"; }
+
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            if [ "$INPUT_DRAIN" = "true" ]; then
+              dispatch --drain-queue
+              exit
+            fi
+            if [ -z "$INPUT_SLUG" ] || [ -z "$INPUT_EXP" ]; then
+              echo "::error::give both slug and exp, or tick drain_queue"
+              exit 1
+            fi
+            extra=()
+            if [ "$INPUT_FORCE" = "true" ]; then extra+=(--force); fi
+            dispatch --enqueue "${extra[@]}" -- "$INPUT_SLUG" "$INPUT_EXP"
+            exit
+          fi
+
+          if [ "$EVENT" = "push" ]; then
+            if [[ "$BEFORE" =~ ^0+$ ]]; then
+              echo "first push of the branch: nothing is dispatched automatically"
+              exit 0
+            fi
+            configs="$(python tools/ci/changed.py configs --base "$BEFORE")"
+            extra=(--skip-unlocked)
+          else
+            configs="$(python tools/ci/changed.py configs --root pr-code --base origin/main)"
+            extra=(--source-root pr-code)
+          fi
+
+          pairs="$(python -c 'import json, sys
+          for item in json.loads(sys.argv[1]):
+              print(item["slug"], item["exp"])' "$configs")"
+          if [ -z "$pairs" ]; then
+            if [ "$EVENT" = "pull_request" ]; then
+              echo "::error::this pull request changes no experiment config; use 'Run workflow' instead"
+              exit 1
+            fi
+            echo "no experiment config to dispatch"
+            exit 0
+          fi
+          failed=0
+          while read -r slug exp; do
+            echo "dispatching $slug $exp"
+            dispatch --enqueue "${extra[@]}" "$slug" "$exp" || failed=1
+          done <<< "$pairs"
+          exit "$failed"
+      - name: Commit state/
+        # Also after a failure: runs that did start must be recorded.
+        if: always()
+        run: |
+          [ -d state ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A state
+          if git diff --cached --quiet; then
+            echo "state unchanged"
+            exit 0
+          fi
+          git commit -m "bot(dispatch): update state"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            echo "push failed (attempt $attempt): rebasing on main"
+            git pull --rebase --autostash origin main
+          done
+          echo "::error::state/ could not be pushed. A kernel may be running without a record."
+          exit 1

@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+build/
+dist/
+.venv/
+venv/
+
+# Offline dry-run loop output (never committed)
+.dryrun/
+
+# Secrets
+.env
+.env.*
+kaggle.json
+access_token
+access_token.txt
+*.pem
+.claude/settings.local.json
+
+# Downloaded data and model weights (never committed)
+data_cache/
+*.nii
+*.nii.gz
+*.dcm
+*.mha
+*.nrrd
+*.parquet
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# OS
+.DS_Store
+Thumbs.db

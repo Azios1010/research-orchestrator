@@ -1,0 +1,35 @@
+slug: __SLUG__
+title: __TITLE_JSON__
+status: SCAFFOLDED
+question: "TODO: the single question this smoke test answers."
+hypotheses:
+  - id: H1
+    statement: "TODO: method a scores higher than method b, per subject."
+    falsified_if: "TODO: the 95% CI of a - b lies at or below 0 (ci_hi(a-b) <= 0)"
+data:
+  source: "TODO: where the data comes from"
+  license: "TODO"
+  access: "TODO: how the kernel obtains it. Data is never committed."
+  contains_patient_data: false
+compute:
+  l1_gpu_hours_cap: 2
+  max_l1_rounds: 2
+entrypoint:
+  module: src.main
+  function: run
+outputs:
+  - summary.json
+  - per_subject.csv
+scorecard_map:
+  n_subjects_requested: {file: summary.json, path: n_requested}
+  n_subjects_usable: {file: summary.json, path: n_usable}
+  metrics:
+    "mean_delta(a-b)": {file: summary.json, path: contrasts.a-b.mean_delta}
+    "ci_lo(a-b)": {file: summary.json, path: contrasts.a-b.ci_lo}
+    "ci_hi(a-b)": {file: summary.json, path: contrasts.a-b.ci_hi}
+gates:
+  # DRAFT: pending owner approval. lock_prereg.py refuses to lock until approval is APPROVED.
+  approval: DRAFT
+  GO: "ci_lo(a-b) > 0"
+  PARK: "ci_hi(a-b) <= 0"
+owner_notes: ""

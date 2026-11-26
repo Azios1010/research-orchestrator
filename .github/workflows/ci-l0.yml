@@ -1,0 +1,86 @@
+# Lint, tests, validation and the two protection checks on every pull request, then the L0 smoke
+# test of each direction the pull request changes, or of every direction if it changes anything
+# under labcore/. No secrets are used here.
+name: ci-l0
+
+on:
+  pull_request:
+  workflow_call: # dispatch.yml runs this before a pull request labelled run-l1 is dispatched
+
+permissions:
+  contents: read
+
+concurrency:
+  # github.workflow is the caller's name when reused, so dispatch.yml and a direct run never
+  # cancel each other.
+  group: ci-l0-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      directions: ${{ steps.changed.outputs.directions }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check .
+      - name: Validate the registry, every direction.yaml and the state files
+        run: python tools/validate.py
+      # A pull_request checkout is the merge commit; its first parent is the base branch exactly
+      # as merged, so bot commits made on main meanwhile are not counted against the branch.
+      - name: state/ and results/ are untouched
+        run: python tools/ci/protected_paths.py --base "HEAD^1"
+      - name: Locked pre-registrations are unchanged
+        run: python tools/ci/prereg_lock.py --base "HEAD^1"
+      - name: No phenotype columns in results/
+        run: python tools/ci/results_privacy.py
+      - name: Tests
+        run: python -m pytest tests
+      # Every direction if labcore/** changed.
+      - name: Which directions need L0
+        id: changed
+        run: |
+          directions="$(python tools/ci/changed.py directions --base "HEAD^1")"
+          echo "directions=$directions" >> "$GITHUB_OUTPUT"
+
+  l0:
+    needs: checks
+    if: needs.checks.outputs.directions != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        slug: ${{ fromJSON(needs.checks.outputs.directions) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Install the lab and the direction's requirements
+        env:
+          SLUG: ${{ matrix.slug }}
+        run: |
+          python -m pip install -e ".[dev]"
+          requirements="directions/$SLUG/requirements.txt"
+          if grep -qiE '^torch([^a-z0-9_-]|$)' "$requirements"; then
+            # CPU wheels: much smaller than the default CUDA build.
+            python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          fi
+          python -m pip install -r "$requirements"
+      - name: L0 smoke test
+        env:
+          SLUG: ${{ matrix.slug }}
+        run: python tools/validate.py --run-l0 "$SLUG" --no-record

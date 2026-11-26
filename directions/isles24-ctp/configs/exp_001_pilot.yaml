@@ -1,0 +1,23 @@
+# exp_001_pilot: the defaults of reference/isles24_raw_vs_maps_pilot.ipynb.
+compute:
+  # The notebook estimates "under 1.5 h" on a T4. UNKNOWN until the first real run.
+  # The watcher marks the run TIMEOUT after 2 x this value.
+  est_gpu_hours: 1.5
+params:
+  repo_id: hugging-science/isles24-stroke
+  n_total_shards: 149
+  n_cases: 40
+  seed: 2027
+  t_window: 16
+  t_pre: 5
+  n_baseline: 3
+  img_size: 128
+  min_brain_frac: 0.02
+  n_folds: 5
+  epochs: 40
+  batch_size: 16
+  lr: 0.001
+  base_ch: 32
+  lesion_slice_frac: 0.5
+  n_boot: 10000
+  arms: [maps, raw, N1, N2]

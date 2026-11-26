@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "state/runs.json (queue.json and gpu_budget.json are under $defs)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["runs"],
+  "properties": {
+    "runs": { "type": "array", "items": { "$ref": "#/$defs/run" } }
+  },
+  "$defs": {
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_id", "slug", "exp", "kernel_id", "commit_sha", "config_hash", "status", "submitted_at",
+        "last_checked_at", "finished_at", "est_gpu_hours", "retries", "result_path", "issue_number",
+        "failure_class"
+      ],
+      "properties": {
+        "run_id": { "type": "string" },
+        "slug": { "type": "string" },
+        "exp": { "type": "string" },
+        "kernel_id": { "type": "string" },
+        "kernel_version": { "type": ["integer", "null"] },
+        "backend": { "enum": ["kaggle", "local"] },
+        "commit_sha": { "type": "string" },
+        "config_hash": { "type": "string" },
+        "code_hash": { "type": "string" },
+        "bundle_hash": { "type": "string" },
+        "prereg_hash": { "type": ["string", "null"] },
+        "l1_round": { "type": ["integer", "null"] },
+        "status": {
+          "enum": [
+            "QUEUED", "RUNNING", "UNKNOWN", "COMPLETE", "COMPLETE_INVALID", "ERROR", "TIMEOUT", "CANCELLED"
+          ]
+        },
+        "submitted_at": { "type": "string" },
+        "last_checked_at": { "type": ["string", "null"] },
+        "finished_at": { "type": ["string", "null"] },
+        "est_gpu_hours": { "type": "number", "exclusiveMinimum": 0 },
+        "actual_gpu_hours": { "type": ["number", "null"] },
+        "retries": { "type": "integer", "minimum": 0 },
+        "retry_of": { "type": ["string", "null"] },
+        "result_path": { "type": ["string", "null"] },
+        "issue_number": { "type": ["integer", "null"] },
+        "failure_class": { "enum": ["infra", "code", null] }
+      }
+    },
+    "queue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["queue"],
+      "properties": {
+        "queue": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slug", "exp", "enqueued_at", "reason"],
+            "properties": {
+              "slug": { "type": "string" },
+              "exp": { "type": "string" },
+              "enqueued_at": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["weekly_cap_hours", "reset_weekday", "week_start", "used_hours", "entries"],
+      "properties": {
+        "weekly_cap_hours": { "type": "number", "exclusiveMinimum": 0 },
+        "reset_weekday": {
+          "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        },
+        "week_start": { "type": ["string", "null"] },
+        "used_hours": { "type": "number", "minimum": 0 },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["run_id", "slug", "hours", "settled", "at"],
+            "properties": {
+              "run_id": { "type": "string" },
+              "slug": { "type": "string" },
+              "hours": { "type": "number", "minimum": 0 },
+              "settled": { "type": "boolean" },
+              "at": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

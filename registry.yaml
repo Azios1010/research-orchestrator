@@ -1,0 +1,14 @@
+# Lifecycle of every direction. Edited by tools/ (through pull requests), not by hand.
+# IDEA -> SCAFFOLDED -> L0_PASS -> L1_RUNNING -> VERDICT(GO|REVISE|PARK) -> GRADUATED | ARCHIVED
+directions:
+  isles24-ctp:
+    title: 'ISLES''24: raw 4D CTP vs perfusion maps for follow-up infarct segmentation'
+    status: SCAFFOLDED
+    path: directions/isles24-ctp
+    created: '2026-11-26'
+    l0: null
+    l1_rounds: 0
+    prereg_lock: null
+    lock_history: []
+    verdict: null
+    graduated_to: null

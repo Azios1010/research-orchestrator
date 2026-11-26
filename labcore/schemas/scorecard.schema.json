@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "scorecard.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "slug", "exp", "run_id", "commit_sha", "config_hash",
+    "n_subjects_requested", "n_subjects_usable", "pipeline_ok", "gpu_hours", "runtime_min", "metrics"
+  ],
+  "properties": {
+    "slug": { "type": "string" },
+    "exp": { "type": "string" },
+    "run_id": { "type": "string" },
+    "commit_sha": { "type": "string" },
+    "config_hash": { "type": "string" },
+    "n_subjects_requested": { "type": "integer", "minimum": 0 },
+    "n_subjects_usable": { "type": "integer", "minimum": 0 },
+    "pipeline_ok": { "type": "boolean" },
+    "gpu_hours": { "type": "number", "minimum": 0 },
+    "runtime_min": { "type": "number", "minimum": 0 },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": { "type": ["number", "boolean"] }
+    }
+  }
+}

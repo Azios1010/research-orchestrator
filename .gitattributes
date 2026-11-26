@@ -1,0 +1,5 @@
+# LF everywhere so prereg hashes and kernel bundles are identical on Windows and Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary

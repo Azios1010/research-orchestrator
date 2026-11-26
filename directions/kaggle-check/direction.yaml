@@ -1,6 +1,6 @@
 slug: kaggle-check
 title: "First-run check, expected to fail"
-status: L1_RUNNING
+status: ARCHIVED
 question: "TODO: the single question this smoke test answers."
 hypotheses:
   - id: H1

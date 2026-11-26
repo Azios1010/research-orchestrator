@@ -14,7 +14,7 @@ directions:
     graduated_to: null
   kaggle-check:
     title: First-run check, expected to fail
-    status: L1_RUNNING
+    status: ARCHIVED
     path: directions/kaggle-check
     created: '2026-11-26'
     l0:

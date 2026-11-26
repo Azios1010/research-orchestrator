@@ -1,0 +1,38 @@
+{
+  "run_id": "kaggle-check-exp-001-20261126t155705z-4654a6",
+  "stage": "run",
+  "utc_time": "2026-11-26T16:07:51Z",
+  "ok": false,
+  "error_type": "RuntimeError",
+  "error_message": "too few usable subjects: 0",
+  "traceback_tail": "Traceback (most recent call last):\n  File \"/kaggle/src/script.py\", line 821, in main\n    entry(str(bundle / manifest[\"config_path\"]), str(out))\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/lab_bundle_i4v3pfq_/directions/kaggle-check/src/main.py\", line 30, in run\n    raise RuntimeError(f\"too few usable subjects: {len(rows)}\")\nRuntimeError: too few usable subjects: 0",
+  "started_utc": "2026-11-26T16:07:42Z",
+  "finished_utc": "2026-11-26T16:07:51Z",
+  "history": [
+    {
+      "stage": "unpack",
+      "utc_time": "2026-11-26T16:07:42Z",
+      "ok": false
+    },
+    {
+      "stage": "requirements",
+      "utc_time": "2026-11-26T16:07:43Z",
+      "ok": false
+    },
+    {
+      "stage": "env",
+      "utc_time": "2026-11-26T16:07:43Z",
+      "ok": false
+    },
+    {
+      "stage": "run",
+      "utc_time": "2026-11-26T16:07:50Z",
+      "ok": false
+    },
+    {
+      "stage": "run",
+      "utc_time": "2026-11-26T16:07:51Z",
+      "ok": false
+    }
+  ]
+}

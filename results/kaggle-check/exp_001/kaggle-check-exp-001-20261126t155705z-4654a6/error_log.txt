@@ -1,0 +1,43 @@
+[lab] 2026-11-26T16:07:42Z run_id=kaggle-check-exp-001-20261126t155705z-4654a6 commit=020cbe2777d0779a722f6f0a4ecd3589a4e65c79
+[lab] 2026-11-26T16:07:42Z stage=unpack
+[lab] 2026-11-26T16:07:43Z stage=requirements
+[lab] 2026-11-26T16:07:43Z all requirements already installed
+[lab] 2026-11-26T16:07:43Z stage=env
+[lab] 2026-11-26T16:07:50Z gpu=Tesla T4 torch=2.11.0+cu130
+[lab] 2026-11-26T16:07:50Z stage=run
+subject 0: missing
+subject 1: missing
+subject 2: missing
+subject 3: missing
+subject 4: missing
+subject 5: missing
+subject 6: missing
+subject 7: missing
+subject 8: missing
+subject 9: missing
+subject 10: missing
+subject 11: missing
+subject 12: missing
+subject 13: missing
+subject 14: missing
+subject 15: missing
+subject 16: missing
+subject 17: missing
+subject 18: missing
+subject 19: missing
+Traceback (most recent call last):
+  File "/kaggle/src/script.py", line 837, in <module>
+    main()
+    ~~~~^^
+  File "/kaggle/src/script.py", line 821, in main
+    entry(str(bundle / manifest["config_path"]), str(out))
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/lab_bundle_i4v3pfq_/directions/kaggle-check/src/main.py", line 30, in run
+    raise RuntimeError(f"too few usable subjects: {len(rows)}")
+RuntimeError: too few usable subjects: 0
+/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 394187 bytes to __results__.html

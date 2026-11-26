@@ -2,14 +2,14 @@
   "weekly_cap_hours": 25,
   "reset_weekday": "saturday",
   "week_start": "2026-11-21",
-  "used_hours": 0.5,
+  "used_hours": 0.0025,
   "entries": [
     {
       "run_id": "kaggle-check-exp-001-20261126t155705z-4654a6",
       "slug": "kaggle-check",
-      "hours": 0.5,
-      "settled": false,
-      "at": "2026-11-26T15:57:05Z"
+      "hours": 0.0025,
+      "settled": true,
+      "at": "2026-11-26T17:04:25Z"
     }
   ]
 }

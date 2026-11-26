@@ -13,17 +13,17 @@
       "bundle_hash": "sha256:b6d54d6c2926db25f711951307a06d0c9e0be3da16bd74e837ae2c89219cb8c3",
       "prereg_hash": "sha256:a5b88cfb4c94e7658976988ea238696f180c0c64dc39617615316fa13da87842",
       "l1_round": 1,
-      "status": "QUEUED",
+      "status": "ERROR",
       "submitted_at": "2026-11-26T15:57:05Z",
-      "last_checked_at": null,
-      "finished_at": null,
+      "last_checked_at": "2026-11-26T17:04:25Z",
+      "finished_at": "2026-11-26T17:04:25Z",
       "est_gpu_hours": 0.5,
-      "actual_gpu_hours": null,
+      "actual_gpu_hours": 0.0025,
       "retries": 0,
       "retry_of": null,
       "result_path": "results/kaggle-check/exp_001/kaggle-check-exp-001-20261126t155705z-4654a6",
-      "issue_number": null,
-      "failure_class": null
+      "issue_number": 2,
+      "failure_class": "code"
     }
   ]
 }

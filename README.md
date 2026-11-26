@@ -13,7 +13,7 @@ IDEA -> SCAFFOLDED -> L0_PASS -> L1_RUNNING -> VERDICT(GO | REVISE | PARK) -> GR
 | L1 | a small run on real data, producing a scorecard | Kaggle GPU, internet on | capped GPU hours |
 | Verdict | gates from `direction.yaml`, applied by script | your machine, via pull request | none |
 
-When a direction enters L1, `prereg.md`, the gates, the scorecard map, `checks.py`, `src/evaluate.py`
+When a direction enters L1, `prereg.md`, the gates, the scorecard map, `checks.py`, everything under `src/`
 and the labcore version are hash-locked. An LLM may write interpretation; it never decides a verdict.
 
 ## Quick start (offline, no accounts)

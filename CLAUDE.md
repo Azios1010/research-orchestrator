@@ -10,9 +10,10 @@ moving the goalposts after seeing results.
 2. **Never edit `state/` or `results/`.** Only the bot workflows write them. CI rejects a PR that does.
 3. **Frozen once in L1.** For a direction whose registry status is `L1_RUNNING` or later, never change:
    - what the hash lock covers (CI checks it): `prereg.md`, the `gates` and `scorecard_map` blocks of
-     `direction.yaml`, `checks.py`, `src/evaluate.py` and `labcore.__version__`;
-   - other evaluation code: metric, preprocessing, fold, seed, arm and exclusion code elsewhere in
-     `src/`, and `labcore/stats`, `labcore/verdict`. **The hash lock does not see edits to these:
+     `direction.yaml`, `checks.py`, every file under `src/` (`src/evaluate.py` only, for a lock made
+     before hash scheme 2) and `labcore.__version__`;
+   - other evaluation code: `labcore/stats`, `labcore/verdict`, and the experiment configs (the lock does
+     not cover `configs/`). **The hash lock does not see edits to these:
      keeping them unchanged is on you.** A change to `labcore/stats` must bump `labcore.__version__`
      (a test checks it), which cannot be merged while a direction is `L1_RUNNING`.
    - an experiment config that already has a run (add a new config instead).

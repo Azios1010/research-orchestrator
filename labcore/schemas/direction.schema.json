@@ -91,7 +91,16 @@
         "PARK": { "type": "string", "minLength": 1 }
       }
     },
-    "owner_notes": { "type": "string" }
+    "owner_notes": { "type": "string" },
+    "results_columns": {
+      "type": "object",
+      "description": "Optional. Maps each CSV/TSV output to the exact header it may have; a column not listed is refused whatever its name.",
+      "additionalProperties": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    }
   },
   "$defs": {
     "slug": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$", "maxLength": 30 },

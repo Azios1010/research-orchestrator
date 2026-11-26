@@ -1,6 +1,7 @@
 """Hash-lock a direction and move it into L1 (or open a new round).
 
-The lock covers prereg.md, gates, scorecard_map, checks.py, src/evaluate.py and labcore.__version__.
+The lock covers prereg.md, gates, scorecard_map, checks.py, every file under src/ and
+labcore.__version__ (hash scheme 2).
 
     python tools/lock_prereg.py <slug>              # L0_PASS -> L1_RUNNING
     python tools/lock_prereg.py <slug> --new-round  # after a REVISE verdict
@@ -20,7 +21,7 @@ from labcore import registry
 from labcore.config import ConfigError, load_direction
 from labcore.io import iso, utcnow, write_text_atomic
 from labcore.kaggle.bundle import code_hash, tree_hash
-from labcore.verdict.prereg import LOCKED_TEXT, prereg_hash, stats_version
+from labcore.verdict.prereg import LOCKED_TEXT, SCHEME, prereg_hash, stats_version
 
 
 class LockError(RuntimeError):
@@ -54,11 +55,12 @@ def lock(root: Path, slug: str) -> dict:
     round_number = item.get("l1_rounds", 0) + 1
     try:
         version = stats_version(root)
-        digest = prereg_hash(directory, version=version)
+        digest = prereg_hash(directory, version=version, scheme=SCHEME)
     except (OSError, ValueError) as exc:
         raise LockError(str(exc)) from exc
     new_lock = {
         "hash": digest, "locked_at": iso(utcnow()), "round": round_number, "stats_version": version,
+        "hash_scheme": SCHEME,
     }
     registry.set_status(
         root, slug, "L1_RUNNING", l1_rounds=round_number, prereg_lock=new_lock, verdict=None

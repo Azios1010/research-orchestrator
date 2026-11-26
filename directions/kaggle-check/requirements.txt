@@ -1,0 +1,4 @@
+# Installed on Kaggle only if missing. Keep heavy dependencies here, not in labcore.
+numpy
+pandas
+pyyaml

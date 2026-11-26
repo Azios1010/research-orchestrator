@@ -1,0 +1,7 @@
+compute:
+  est_gpu_hours: 0.5
+params:
+  data_dir: "TODO-data-location-on-kaggle"
+  n_subjects: 20
+  n_boot: 10000
+  seed: 1

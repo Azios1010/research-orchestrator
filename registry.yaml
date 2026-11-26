@@ -12,3 +12,21 @@ directions:
     lock_history: []
     verdict: null
     graduated_to: null
+  kaggle-check:
+    title: First-run check, expected to fail
+    status: L1_RUNNING
+    path: directions/kaggle-check
+    created: '2026-11-26'
+    l0:
+      passed_at: '2026-11-26T15:52:32Z'
+      code_hash: sha256:09d430758d3e1de55dfe0923c3bb4982448360219f0eba123fb3faa412ae9bf3
+      labcore_hash: sha256:2c52a4a327857eb027d3c6c8b7bbc2b553050570835506b4b629995c0ee2858d
+    l1_rounds: 1
+    prereg_lock:
+      hash: sha256:a5b88cfb4c94e7658976988ea238696f180c0c64dc39617615316fa13da87842
+      locked_at: '2026-11-26T15:52:34Z'
+      round: 1
+      stats_version: 0.1.0
+    lock_history: []
+    verdict: null
+    graduated_to: null

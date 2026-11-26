@@ -1,6 +1,6 @@
 slug: kaggle-check
 title: "First-run check, expected to fail"
-status: SCAFFOLDED
+status: L1_RUNNING
 question: "TODO: the single question this smoke test answers."
 hypotheses:
   - id: H1
@@ -29,7 +29,7 @@ scorecard_map:
     "ci_hi(a-b)": {file: summary.json, path: contrasts.a-b.ci_hi}
 gates:
   # DRAFT: pending owner approval. lock_prereg.py refuses to lock until approval is APPROVED.
-  approval: DRAFT
+  approval: APPROVED
   GO: "ci_lo(a-b) > 0"
   PARK: "ci_hi(a-b) <= 0"
 owner_notes: ""

@@ -12,3 +12,14 @@ directions:
     lock_history: []
     verdict: null
     graduated_to: null
+  kaggle-check:
+    title: First-run check, expected to fail
+    status: SCAFFOLDED
+    path: directions/kaggle-check
+    created: '2026-11-26'
+    l0: null
+    l1_rounds: 0
+    prereg_lock: null
+    lock_history: []
+    verdict: null
+    graduated_to: null

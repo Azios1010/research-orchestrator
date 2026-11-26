@@ -8,8 +8,9 @@ description: Implement or modify the code and config of one experiment (argument
 1. Read `registry.yaml`, then `directions/<slug>/direction.yaml`, `prereg.md`, the config and `src/`.
 2. **Check the status.** At `L1_RUNNING` or later, `prereg.md`, gates, evaluation code (`checks.py`,
    `src/evaluate.py`, `scorecard_map`, metrics, statistics, preprocessing, folds, seeds, arms,
-   exclusions), `labcore.__version__` and configs with a run are frozen. Fixes that cannot change a number (logging, downloads, dependencies) are allowed; say why
-   the change cannot affect results. Anything else: stop and propose a new round or a new direction.
+   exclusions), `labcore.__version__` and configs with a run are frozen. Any edit under `src/` breaks the lock (hash scheme 2 covers all of it, even logging), so it
+   needs a new round. Dependencies in `requirements.txt` and a new config are outside the lock; say why such
+   a change cannot affect results. Anything else: stop and propose a new round or a new direction.
 3. Work on a branch. Implement the change and `configs/<exp>.yaml` with `compute.est_gpu_hours`.
    The estimate may not exceed `compute.l1_gpu_hours_cap`; the kernel is timed out at twice the estimate.
 4. Extend the L0 test and fake data for what changed.

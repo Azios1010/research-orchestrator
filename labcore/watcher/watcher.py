@@ -40,7 +40,7 @@ from labcore.stats.scorecard import (
     scorecard_problems,
 )
 from labcore.verdict.gates import GateError
-from labcore.verdict.prereg import LOCKED_TEXT, prereg_hash
+from labcore.verdict.prereg import LOCKED_TEXT, matches_stored
 from labcore.verdict.verdict import VerdictError, compute_verdict
 from labcore.watcher.checks import copy_results, direction_checks, generic_checks
 from labcore.watcher.classify import classify
@@ -156,8 +156,9 @@ class Watcher:
             direction_dir = self._source_for(run, temporary / "source") / "directions" / run["slug"]
             direction = load_direction(direction_dir)
             result_dir = self.lab.results_dir / run["slug"] / run["exp"] / run["run_id"]
-            problems = copy_results(out, result_dir, direction["outputs"])
-            problems += generic_checks(result_dir, direction["outputs"])
+            columns = direction.get("results_columns")
+            problems = copy_results(out, result_dir, direction["outputs"], columns)
+            problems += generic_checks(result_dir, direction["outputs"], columns)
             scorecard = None
             if not problems:
                 try:
@@ -192,10 +193,10 @@ class Watcher:
         if not run.get("prereg_hash"):
             return None, "No verdict: this run was submitted without a pre-registration lock."
         try:
-            current = prereg_hash(direction_dir)
+            unchanged = matches_stored(direction_dir, run["prereg_hash"])
         except (OSError, ValueError) as exc:
             return None, f"No verdict: the lock cannot be checked ({exc})."
-        if direction["gates"]["approval"] != "APPROVED" or current != run["prereg_hash"]:
+        if direction["gates"]["approval"] != "APPROVED" or not unchanged:
             return None, f"No verdict: what was locked ({LOCKED_TEXT}) differs from what is available now."
         try:
             result = compute_verdict(direction["gates"], scorecard)

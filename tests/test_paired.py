@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from labcore.stats.paired import mde, paired_summary
+from labcore.stats.paired import chi2_ppf, mde, mde_ucl, paired_summary, sd_delta_ucl80, sd_upper
 
 
 def test_constant_difference():
@@ -62,3 +62,42 @@ def test_invalid_input():
         paired_summary([1.0], [1.0, 2.0])
     with pytest.raises(ValueError):
         paired_summary([np.nan], [1.0])
+
+
+# scipy.stats.chi2.ppf, computed once and written down: labcore must not depend on scipy.
+CHI2_REFERENCE = [
+    (0.2, 1, 0.0641847546673016), (0.2, 2, 0.4462871026284195), (0.2, 5, 2.342534305841121),
+    (0.2, 9, 5.380053211773292), (0.2, 19, 13.715789706290439), (0.2, 39, 31.440517797589493),
+    (0.2, 148, 133.3602853144413), (0.5, 2, 1.386294361119891), (0.5, 148, 147.33386983750842),
+    (0.975, 1, 5.023886187314888), (0.975, 39, 58.12005973468633), (0.975, 148, 183.57308036596308),
+]
+
+
+@pytest.mark.parametrize(("p", "df", "expected"), CHI2_REFERENCE)
+def test_chi2_ppf_matches_scipy(p, df, expected):
+    assert chi2_ppf(p, df) == pytest.approx(expected, rel=1e-9)
+
+
+def test_chi2_ppf_rejects_bad_input():
+    for p, df in ((0.0, 5), (1.0, 5), (-0.1, 5), (0.5, 0)):
+        with pytest.raises(ValueError):
+            chi2_ppf(p, df)
+
+
+def test_sd_upper_bound_is_above_the_sample_sd_and_shrinks_with_n():
+    assert sd_delta_ucl80(0.1, 40) == pytest.approx(0.1 * math.sqrt(39 / 31.440517797589493), rel=1e-9)
+    assert sd_delta_ucl80(0.1, 40) > 0.1
+    assert sd_delta_ucl80(0.1, 400) < sd_delta_ucl80(0.1, 40)
+    assert sd_upper(0.1, 40, 0.5) < sd_upper(0.1, 40, 0.8) < sd_upper(0.1, 40, 0.95)
+    for n in (0, 1):
+        with pytest.raises(ValueError):
+            sd_delta_ucl80(0.1, n)
+    with pytest.raises(ValueError):
+        sd_upper(0.1, 40, 1.0)
+
+
+def test_mde_with_the_upper_bound_is_larger_than_the_plain_mde():
+    plain = mde(0.1, 149)
+    assert mde_ucl(0.1, 40, 149) == pytest.approx(2.8 * sd_delta_ucl80(0.1, 40) / math.sqrt(149))
+    assert mde_ucl(0.1, 40, 149) > plain
+    assert mde_ucl(0.1, 40, 149, confidence=0.5) < mde_ucl(0.1, 40, 149)

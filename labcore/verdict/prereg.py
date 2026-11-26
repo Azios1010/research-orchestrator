@@ -2,6 +2,10 @@
 
 Covered: prereg.md, the `gates` and `scorecard_map` blocks of direction.yaml, the direction's
 checks.py and src/evaluate.py, and labcore.__version__ as the version of the statistics code.
+From hash scheme 2 on, every file under src/ is covered, not only src/evaluate.py: a metric,
+preprocessing, fold or exclusion rule that lives in another module can no longer change silently.
+A lock records its scheme as `hash_scheme`; a lock without that field is scheme 1 and is still
+checked the old way, so locks made before scheme 2 stay valid.
 
 Line endings are normalised and the YAML blocks are hashed as canonical JSON, so the hash is the
 same on Windows and Linux and does not change when only YAML comments or layout change. The
@@ -23,7 +27,12 @@ from labcore.io import normalize_newlines, sha256_hex
 
 LOCKED_FILES = ("prereg.md", "checks.py", "src/evaluate.py")
 LOCKED_BLOCKS = ("gates", "scorecard_map")
-LOCKED_TEXT = "prereg.md, gates, scorecard_map, checks.py, src/evaluate.py or labcore.__version__"
+LOCKED_TEXT = (
+    "prereg.md, gates, scorecard_map, checks.py, src/ (only src/evaluate.py for a scheme 1 lock) "
+    "or labcore.__version__"
+)
+SCHEME = 2  # the scheme written by tools/lock_prereg.py
+SCHEMES = (1, 2)
 
 
 def _canonical(value: Any) -> bytes:
@@ -50,8 +59,27 @@ def stats_version(root: Path) -> str:
     raise ValueError(f"{path} does not assign a literal __version__")
 
 
-def hash_parts(files: Mapping[str, bytes], direction_yaml_bytes: bytes, version: str) -> str:
-    """The lock hash from file contents. `files` maps each name in LOCKED_FILES to its bytes."""
+def src_files(direction_dir: Path) -> dict[str, bytes]:
+    """Every file under <direction>/src, by posix path relative to the direction. Caches are skipped."""
+    root = Path(direction_dir) / "src"
+    found = {}
+    for path in sorted(root.rglob("*")) if root.is_dir() else []:
+        relative = path.relative_to(root)
+        if path.is_file() and "__pycache__" not in relative.parts and path.suffix != ".pyc":
+            found[f"src/{relative.as_posix()}"] = path.read_bytes()
+    return found
+
+
+def hash_parts(
+    files: Mapping[str, bytes],
+    direction_yaml_bytes: bytes,
+    version: str,
+    sources: Mapping[str, bytes] | None = None,
+) -> str:
+    """The lock hash from file contents. `files` maps each name in LOCKED_FILES to its bytes.
+
+    `sources` (every file under src/) selects scheme 2; without it the hash is the scheme 1 hash.
+    """
     document = yaml.safe_load(direction_yaml_bytes.decode("utf-8"))
     for block in LOCKED_BLOCKS:
         if not isinstance(document, dict) or block not in document:
@@ -59,11 +87,15 @@ def hash_parts(files: Mapping[str, bytes], direction_yaml_bytes: bytes, version:
     parts = {name: sha256_hex(normalize_newlines(files[name])) for name in LOCKED_FILES}
     parts.update({block: sha256_hex(_canonical(document[block])) for block in LOCKED_BLOCKS})
     parts["labcore.__version__"] = version
+    if sources is not None:
+        parts["src"] = {name: sha256_hex(normalize_newlines(data)) for name, data in sorted(sources.items())}
     return sha256_hex(_canonical(parts))
 
 
-def prereg_hash(direction_dir: Path, *, version: str | None = None) -> str:
+def prereg_hash(direction_dir: Path, *, version: str | None = None, scheme: int = SCHEME) -> str:
     """Hash of <root>/directions/<slug>. `version` defaults to the labcore version under <root>."""
+    if scheme not in SCHEMES:
+        raise ValueError(f"unknown hash scheme {scheme!r}")
     direction_dir = Path(direction_dir).resolve()
     missing = [n for n in (*LOCKED_FILES, "direction.yaml") if not (direction_dir / n).is_file()]
     if missing:
@@ -72,6 +104,7 @@ def prereg_hash(direction_dir: Path, *, version: str | None = None) -> str:
         {name: (direction_dir / name).read_bytes() for name in LOCKED_FILES},
         (direction_dir / "direction.yaml").read_bytes(),
         version if version is not None else stats_version(direction_dir.parents[1]),
+        src_files(direction_dir) if scheme == 2 else None,
     )
 
 
@@ -84,4 +117,9 @@ def hash_for_entry(direction_dir: Path, item: Mapping[str, Any]) -> str:
     """
     lock = item.get("prereg_lock") or {}
     version = None if item.get("status") == "L1_RUNNING" else lock.get("stats_version")
-    return prereg_hash(direction_dir, version=version)
+    return prereg_hash(direction_dir, version=version, scheme=lock.get("hash_scheme", 1))
+
+
+def matches_stored(direction_dir: Path, stored: str) -> bool:
+    """True if the files hash to `stored` under any scheme (for a run that kept only the hash)."""
+    return any(prereg_hash(direction_dir, scheme=scheme) == stored for scheme in SCHEMES)

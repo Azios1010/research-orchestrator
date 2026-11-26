@@ -228,11 +228,11 @@ def test_code_can_come_from_another_checkout(toy_lab, tmp_path, monkeypatch):
     monkeypatch.setattr(dispatching, "KaggleClient", FakeKaggle)
     branch = tmp_path / "pr-code"
     shutil.copytree(toy_lab, branch)
-    approve_and_lock(branch, TOY)  # locked only in the branch
     marker = tmp_path / "executed"
     for module in (branch / "labcore" / "__init__.py", branch / "directions" / TOY / "src" / "main.py"):
         with open(module, "a", encoding="utf-8") as handle:
             handle.write(f"\nopen({str(marker)!r}, 'w').close()\n")
+    approve_and_lock(branch, TOY)  # locked only in the branch, after its src/ is final
 
     code = dispatching.main([TOY, "exp_001", "--root", str(toy_lab), "--source-root", str(branch)])
     assert code == 0

@@ -3,6 +3,11 @@
 Only NAMES are inspected (CSV/TSV header cells, JSON object keys, listed JSON column names),
 never values. A list of names cannot catch everything: a phenotype stored under a neutral name,
 or as a value in a long "variable, value" table, passes. Messages quote names only.
+
+A direction can add a stricter, positive check: `results_columns` in direction.yaml maps each
+CSV/TSV output to the exact header it may have. Then a column that is not listed is refused
+whatever its name, so a phenotype under a neutral name ("var_7") cannot slip through. It covers
+table headers only; it does not look at JSON keys or at values.
 """
 
 from __future__ import annotations
@@ -10,6 +15,7 @@ from __future__ import annotations
 import csv
 import json
 import re
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -85,25 +91,51 @@ def _file_names(path: Path) -> list[str]:
     return next(csv.reader(lines[:1], delimiter="\t" if suffix == ".tsv" else ","))
 
 
-def file_problems(path: Path, label: str | None = None) -> list[str]:
-    """Problems with one file; files of other types pass. An unreadable file fails."""
+def _unlisted(path: Path, label: str, allowed: Mapping[str, Sequence[str]]) -> list[str]:
+    if path.suffix.lower() not in (".csv", ".tsv"):
+        return []
+    if label not in allowed:
+        return [f"{label}: a table output that results_columns does not list"]
+    try:
+        names = _file_names(path)
+    except (OSError, ValueError, csv.Error) as exc:
+        return [f"{label}: cannot be read, so its columns cannot be checked ({type(exc).__name__})"]
+    extra = sorted(set(names) - set(allowed[label]))
+    if not extra:
+        return []
+    return [f"{label}: column(s) not in results_columns: {', '.join(repr(n[:60]) for n in extra[:10])}"]
+
+
+def file_problems(
+    path: Path, label: str | None = None, allowed: Mapping[str, Sequence[str]] | None = None
+) -> list[str]:
+    """Problems with one file; files of other types pass. An unreadable file fails.
+
+    `allowed` (the direction's `results_columns`, keyed like `label`) adds the positive check.
+    """
     path, label = Path(path), label or Path(path).name
     if path.suffix.lower() not in CHECKED_SUFFIXES:
         return []
+    problems = []
     try:
         found = sorted({name for name in _file_names(path) if is_phenotype_name(name)})
     except (OSError, ValueError, csv.Error, RecursionError) as exc:
         return [f"{label}: cannot be read, so it cannot be checked for phenotype fields "
                 f"({type(exc).__name__})"]
-    if not found:
-        return []
-    return [f"{label}: phenotype-like column(s) {', '.join(repr(n[:60]) for n in found[:10])}"]
+    if found:
+        problems.append(f"{label}: phenotype-like column(s) {', '.join(repr(n[:60]) for n in found[:10])}")
+    if allowed is not None:
+        problems += _unlisted(path, label, allowed)
+    return problems
 
 
-def tree_problems(folder: Path) -> list[str]:
+def tree_problems(
+    folder: Path, allowed: Mapping[str, Sequence[str]] | None = None
+) -> list[str]:
+    """Problems in every file under `folder`; `allowed` is keyed by path relative to `folder`."""
     folder = Path(folder)
     problems = []
     for path in sorted(folder.rglob("*")):
         if path.is_file():
-            problems += file_problems(path, path.relative_to(folder).as_posix())
+            problems += file_problems(path, path.relative_to(folder).as_posix(), allowed)
     return problems

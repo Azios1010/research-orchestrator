@@ -31,8 +31,8 @@ python tools/new_direction.py <slug> --title "<one line>"
 - `prereg.md`: hypotheses, data, design, exclusions, analysis, gates, open questions. Label claims
   FACT / INTERPRETATION / HYPOTHESIS / UNKNOWN. No invented citations.
 - `src/`: the pipeline behind `entrypoint` (`run(config_path, out_dir)`).
-- `src/evaluate.py` (required): everything that turns outputs into a gated number. It is hash-locked
-  together with `checks.py`.
+- `src/evaluate.py` (required): everything that turns outputs into a gated number. All of `src/` is
+  hash-locked together with `checks.py`.
 - `configs/exp_001.yaml`: `compute.est_gpu_hours` and `params`.
 - `checks.py`: what makes a finished run invalid. It may import only `labcore`'s dependencies.
 - Outputs must not have phenotype columns (`labcore/privacy.py`); L0 fails if they do.

@@ -1,3 +1,29 @@
 {
-  "runs": []
+  "runs": [
+    {
+      "run_id": "kaggle-check-exp-001-20261126t155705z-4654a6",
+      "slug": "kaggle-check",
+      "exp": "exp_001",
+      "kernel_id": "aziosnguyen/kaggle-check-exp-001",
+      "kernel_version": 1,
+      "backend": "kaggle",
+      "commit_sha": "020cbe2777d0779a722f6f0a4ecd3589a4e65c79",
+      "config_hash": "sha256:10eedacfded7353d965be51924de40e85846c47060c0710ab976232c3eaff295",
+      "code_hash": "sha256:09d430758d3e1de55dfe0923c3bb4982448360219f0eba123fb3faa412ae9bf3",
+      "bundle_hash": "sha256:b6d54d6c2926db25f711951307a06d0c9e0be3da16bd74e837ae2c89219cb8c3",
+      "prereg_hash": "sha256:a5b88cfb4c94e7658976988ea238696f180c0c64dc39617615316fa13da87842",
+      "l1_round": 1,
+      "status": "QUEUED",
+      "submitted_at": "2026-11-26T15:57:05Z",
+      "last_checked_at": null,
+      "finished_at": null,
+      "est_gpu_hours": 0.5,
+      "actual_gpu_hours": null,
+      "retries": 0,
+      "retry_of": null,
+      "result_path": "results/kaggle-check/exp_001/kaggle-check-exp-001-20261126t155705z-4654a6",
+      "issue_number": null,
+      "failure_class": null
+    }
+  ]
 }

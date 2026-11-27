@@ -70,7 +70,7 @@ gates:
   # 80% upper confidence bound. "<= 0.02" means a 149-subject study would be 80% powered for 0.02.
   # GO and PARK cannot both hold: GO needs ci_hi >= 0.02 and mde149_ucl <= 0.02, PARK needs the opposite
   # of one of them.
-  approval: DRAFT
+  approval: APPROVED
   GO: "mde149_ucl(raw-maps) <= 0.02 and ci_hi(raw-maps) >= 0.02 and mean(raw-maps) > 0 and ci_lo(raw-N1) > 0"
   PARK: "mde149_ucl(raw-maps) > 0.02 or ci_hi(raw-maps) < 0.02"
 results_columns:

@@ -49,6 +49,31 @@
       "result_path": "results/isles24-ctp/exp_001_pilot/isles24-ctp-exp-001-pilot-20261127t042526z-a860b3",
       "issue_number": null,
       "failure_class": null
+    },
+    {
+      "run_id": "isles24-ctp-reg-exp-001-pilot-20261127t071728z-f2e4d4",
+      "slug": "isles24-ctp-reg",
+      "exp": "exp_001_pilot",
+      "kernel_id": "aziosnguyen/isles24-ctp-reg-exp-001-pilot",
+      "kernel_version": 1,
+      "backend": "kaggle",
+      "commit_sha": "649669230d98bbf5a391a0a37babc4a3480c729d",
+      "config_hash": "sha256:2e60f14c27020bcacbc11a5083c56a176bd8b922ee9c3e0d8889ae5ccf55eb9c",
+      "code_hash": "sha256:cfa44d8b638af554c187cd377f3088bcb7a6c730eb3b0acc723c9845ea50ed5b",
+      "bundle_hash": "sha256:e9a435249549d37502aa66e1b25444d0c8abb766680d5b3d976fc31c060ddddc",
+      "prereg_hash": "sha256:e3de04a77e74b155c17035df899ff6ed38a3af30919a089059ada322b59b830e",
+      "l1_round": 1,
+      "status": "QUEUED",
+      "submitted_at": "2026-11-27T07:17:28Z",
+      "last_checked_at": null,
+      "finished_at": null,
+      "est_gpu_hours": 4.0,
+      "actual_gpu_hours": null,
+      "retries": 0,
+      "retry_of": null,
+      "result_path": "results/isles24-ctp-reg/exp_001_pilot/isles24-ctp-reg-exp-001-pilot-20261127t071728z-f2e4d4",
+      "issue_number": null,
+      "failure_class": null
     }
   ]
 }

@@ -7,10 +7,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from scipy.stats import chi2
 
 for module in ("torch", "nibabel", "pyarrow", "scipy"):
     pytest.importorskip(module)
+
+from scipy.stats import chi2  # noqa: E402
 
 from labcore.testing import experiment_params, load_module, load_package  # noqa: E402
 

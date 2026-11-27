@@ -1,0 +1,29 @@
+# exp_001_pilot: the analysis settings of isles24-ctp's pilot, on the NCCT-registered CTP.
+compute:
+  # INTERPRETATION, a guess: fetching and preprocessing 0.5-2.5 h (the speed from Kaggle to Zenodo
+  # is UNKNOWN; the run stops itself above max_fetch_hours) plus the notebook's "under 1.5 h" of
+  # training. The watcher marks the run TIMEOUT after 2 x this value.
+  est_gpu_hours: 4
+params:
+  repo_id: hugging-science/isles24-stroke
+  n_total_shards: 149
+  n_cases: 40
+  seed: 2027
+  t_window: 16
+  t_pre: 5
+  n_baseline: 3
+  img_size: 128
+  min_brain_frac: 0.02
+  n_folds: 5
+  epochs: 40
+  batch_size: 16
+  lr: 0.001
+  base_ch: 32
+  lesion_slice_frac: 0.5
+  n_boot: 10000
+  arms: [maps, raw, N1, N2]
+  download_threads: 22
+  prepare_threads: 2
+  probe_minutes: 10
+  max_fetch_hours: 2.5
+  min_free_gb: 30

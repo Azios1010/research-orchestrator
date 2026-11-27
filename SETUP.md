@@ -12,7 +12,7 @@ a Kaggle account, and optionally `git-filter-repo` (for graduation; `git subtree
 python -m venv .venv
 . .venv/bin/activate                       # Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-python -m pip install -r directions/isles24-ctp/requirements.txt
+python -m pip install -r directions/isles24-ctp-reg/requirements.txt
 ruff check . && python -m pytest           # PowerShell 5.1: run the two commands separately
 ```
 
@@ -131,8 +131,8 @@ Afterwards set `status: ARCHIVED` in `registry.yaml` and in its `direction.yaml`
 | 8 | Outputs and log of a failed kernel | `client.py` | 7a: `error_log.txt` has the Python traceback, `status.json` exists |
 | 9 | `/kaggle/working` is the output folder | `entrypoint_template.py` | 7a: `env.json` is in the results |
 | 10 | `pip install` inside the kernel | `entrypoint_template.py` | first ISLES log: `installing: ...` succeeds, or `all requirements already installed` |
-| 11 | Hugging Face mirror reachable, file names, columns | `isles24-ctp/src/data.py` | ISLES `cases.csv`: statuses `ok` |
-| 12 | `/kaggle/temp` as cache | `isles24-ctp/src/main.py` | ISLES run has no disk errors |
+| 11 | Zenodo and the Hugging Face mirror from a kernel, and how fast | `isles24-ctp-reg/src/data.py` | ISLES log: `fetched ... GB in ... min`; `cases.csv`: statuses `ok` |
+| 12 | `/kaggle/temp` as cache, and its free space | `isles24-ctp-reg/src/main.py` | ISLES log: `free disk for the cache: ... GB`; no disk errors |
 | 13 | Kaggle secret on an API-pushed kernel | `data.py` | only if downloads return 401/403 |
 | 14 | Weekly quota and reset day | `state.py` | `kaggle quota` |
 | 15 | `concurrency.queue: max` | `dispatch.yml`, `watcher.yml` | Actions tab shows both workflows without "Invalid workflow file". If rejected, delete the `queue` lines |
@@ -145,16 +145,19 @@ Remove an `# UNVERIFIED:` comment only after you have seen it work.
 
 ## 8. First real L1 run (ISLES'24)
 
-1. Read `directions/isles24-ctp/prereg.md`, especially the open questions about the gates.
+1. Read `directions/isles24-ctp-reg/prereg.md`, especially the open questions about the gates.
 2. Decide whether pseudonymous subject IDs and per-subject metrics may be committed to `results/` under the
    dataset licence (CC BY-NC-SA 4.0) and your institution's rules. If not, do not run it from this lab yet.
    (Phenotype columns in `results/` are refused automatically; subject IDs are not.)
 3. In a branch: adjust the gates if needed and set `approval: APPROVED`. Then
-   `python tools/validate.py --run-l0 isles24-ctp` and `python tools/lock_prereg.py isles24-ctp`; merge.
+   `python tools/validate.py --run-l0 isles24-ctp-reg` and
+   `python tools/lock_prereg.py isles24-ctp-reg`; merge.
    From here until the verdict, the locked files and `labcore.__version__` cannot change.
-4. *Actions → dispatch → Run workflow*: `slug` = `isles24-ctp`, `exp` = `exp_001_pilot`.
+4. *Actions → dispatch → Run workflow*: `slug` = `isles24-ctp-reg`, `exp` = `exp_001_pilot`.
+   (A merge that adds or changes a config of a locked direction dispatches it by itself.)
 5. When the tracking issue reports success: `git pull`, then on a branch
-   `python tools/verdict.py isles24-ctp`, write the interpretation below the marker, open a pull request.
+   `python tools/verdict.py isles24-ctp-reg`, write the interpretation below the marker, open a pull
+   request.
 
 ## Operating notes
 

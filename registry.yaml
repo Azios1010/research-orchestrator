@@ -40,15 +40,20 @@ directions:
     graduated_to: null
   isles24-ctp-reg:
     title: 'ISLES''24: raw 4D CTP vs perfusion maps, with the CTP registered to NCCT'
-    status: L0_PASS
+    status: L1_RUNNING
     path: directions/isles24-ctp-reg
     created: '2026-11-27'
     l0:
       passed_at: '2026-11-27T06:32:59Z'
       code_hash: sha256:cfa44d8b638af554c187cd377f3088bcb7a6c730eb3b0acc723c9845ea50ed5b
       labcore_hash: sha256:dc36602ba195d6a3aa7f2ea6434a426c4527361f7b5163efd0a73e077f73edd1
-    l1_rounds: 0
-    prereg_lock: null
+    l1_rounds: 1
+    prereg_lock:
+      hash: sha256:e3de04a77e74b155c17035df899ff6ed38a3af30919a089059ada322b59b830e
+      locked_at: '2026-11-27T07:08:31Z'
+      round: 1
+      stats_version: 0.2.0
+      hash_scheme: 2
     lock_history: []
     verdict: null
     graduated_to: null

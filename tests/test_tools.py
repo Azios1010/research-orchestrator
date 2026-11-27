@@ -28,10 +28,12 @@ def test_this_repository_is_valid():
     assert validate.main([]) == 0
 
 
-def test_isles_gates_are_draft_and_unlocked():
+def test_isles_gates_are_the_reviewed_ones():
+    """The gate text is pinned. Approval and locking are the owner's step, so both states are valid."""
     direction = load_direction(REPO / "directions" / "isles24-ctp")
-    assert direction["gates"] == {
-        "approval": "DRAFT",
+    gates = dict(direction["gates"])
+    approval = gates.pop("approval")
+    assert gates == {
         "GO": "mde149_ucl(raw-maps) <= 0.02 and ci_hi(raw-maps) >= 0.02 and mean(raw-maps) > 0 "
               "and ci_lo(raw-N1) > 0",
         "PARK": "mde149_ucl(raw-maps) > 0.02 or ci_hi(raw-maps) < 0.02",
@@ -40,7 +42,11 @@ def test_isles_gates_are_draft_and_unlocked():
         "file": "summary.json", "path": "contrasts.raw-maps.mean_delta",
     }
     item = registry.load(REPO / "registry.yaml")["directions"]["isles24-ctp"]
-    assert item["prereg_lock"] is None and item["status"] in ("SCAFFOLDED", "L0_PASS")
+    if approval == "DRAFT":
+        assert item["prereg_lock"] is None and item["status"] in ("SCAFFOLDED", "L0_PASS")
+    else:
+        assert approval == "APPROVED"
+        assert item["status"] in ("L0_PASS", "L1_RUNNING", "VERDICT", "GRADUATED", "ARCHIVED")
     assert direction["data"]["contains_patient_data"] is True
 
 

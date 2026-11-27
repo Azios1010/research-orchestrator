@@ -24,16 +24,16 @@ Python 3.11 or newer.
 python -m venv .venv
 . .venv/bin/activate                 # Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-python -m pip install -r directions/isles24-ctp/requirements.txt
+python -m pip install -r directions/isles24-ctp-reg/requirements.txt
 
 ruff check .
 python -m pytest                     # includes the offline end-to-end loops
 python tools/validate.py
 
 # the loop by hand, on fake data; everything goes to .dryrun/
-python -m labcore.runs.dispatch isles24-ctp exp_001_pilot --dry-run
+python -m labcore.runs.dispatch isles24-ctp-reg exp_001_pilot --dry-run
 python -m labcore.watcher.watcher --dry-run
-python tools/verdict.py isles24-ctp --dry-run
+python tools/verdict.py isles24-ctp-reg --dry-run
 ```
 
 Connecting Kaggle, GitHub and the optional services: [SETUP.md](SETUP.md).
@@ -54,7 +54,8 @@ Connecting Kaggle, GitHub and the optional services: [SETUP.md](SETUP.md).
 
 | Slug | Question | Status |
 |---|---|---|
-| `isles24-ctp` | Raw 4D CTP vs perfusion maps for follow-up infarct segmentation (ISLES'24 pilot) | see `registry.yaml`; **gates are DRAFT** |
+| `isles24-ctp-reg` | Raw 4D CTP vs perfusion maps for follow-up infarct segmentation (ISLES'24 pilot), CTP registered to NCCT | see `registry.yaml`; **gates are DRAFT** |
+| `isles24-ctp` | The same question from the mirror's files | `ARCHIVED`: its run stopped before training, the CTP was not on the lesion-mask grid |
 
 ## Layout
 

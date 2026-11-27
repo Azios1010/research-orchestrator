@@ -1,0 +1,110 @@
+slug: isles24-ctp-reg
+title: "ISLES'24: raw 4D CTP vs perfusion maps, with the CTP registered to NCCT"
+status: L0_PASS
+question: >-
+  In a small pilot, does a 2D U-Net given peak-aligned raw CTP frames segment the follow-up infarct
+  better (per-patient Dice) than the same U-Net given perfusion maps, and does any gain depend on
+  the temporal information?
+hypotheses:
+  - id: H1
+    statement: "HYPOTHESIS: raw has a higher mean per-patient Dice than maps."
+    falsified_if: "the 95% bootstrap CI of raw - maps lies below the smallest effect of interest 0.02 (ci_hi(raw-maps) < 0.02)"
+  - id: H2
+    statement: "HYPOTHESIS: a raw advantage needs temporal information; raw beats N1 (temporal mean and max only)."
+    falsified_if: "ci_hi(raw-N1) <= 0"
+  - id: H3
+    statement: "HYPOTHESIS (secondary, not gated): a raw advantage needs temporal order; raw beats N2 (frames shuffled per patient)."
+    falsified_if: "ci_hi(raw-N2) <= 0"
+data:
+  source: "ISLES'24 training release on Zenodo (record 17652035, train.7z): co-registered CTA, CTP, maps, lesion mask. NCCT from the Hugging Face mirror hugging-science/isles24-stroke."
+  license: "CC BY-NC-SA 4.0"
+  access: "Downloaded inside the kernel: Zenodo by HTTP byte ranges (src/zenodo.py), the mirror with huggingface_hub. Never committed."
+  contains_patient_data: true
+compute:
+  l1_gpu_hours_cap: 10
+  max_l1_rounds: 2
+entrypoint:
+  module: src.main
+  function: run
+outputs:
+  - summary.json
+  - per_patient.csv
+  - paired_stats.csv
+  - strata.csv
+  - cases.csv
+  - folds.json
+scorecard_map:
+  n_subjects_requested: {file: summary.json, path: n_requested}
+  n_subjects_usable: {file: summary.json, path: n_usable}
+  metrics:
+    n_primary: {file: summary.json, path: n_primary}
+    n_excluded_empty_gt: {file: summary.json, path: n_excluded_empty_gt}
+    "mean(raw-maps)": {file: summary.json, path: contrasts.raw-maps.mean_delta}
+    "ci_lo(raw-maps)": {file: summary.json, path: contrasts.raw-maps.ci_lo}
+    "ci_hi(raw-maps)": {file: summary.json, path: contrasts.raw-maps.ci_hi}
+    "sd_delta(raw-maps)": {file: summary.json, path: contrasts.raw-maps.sd_delta}
+    "mde149(raw-maps)": {file: summary.json, path: contrasts.raw-maps.mde149}
+    "mde149_ucl(raw-maps)": {file: summary.json, path: contrasts.raw-maps.mde149_ucl}
+    "share_a_better(raw-maps)": {file: summary.json, path: contrasts.raw-maps.share_a_better}
+    "mean(raw-N1)": {file: summary.json, path: contrasts.raw-N1.mean_delta}
+    "ci_lo(raw-N1)": {file: summary.json, path: contrasts.raw-N1.ci_lo}
+    "ci_hi(raw-N1)": {file: summary.json, path: contrasts.raw-N1.ci_hi}
+    "mean(raw-N2)": {file: summary.json, path: contrasts.raw-N2.mean_delta}
+    "ci_lo(raw-N2)": {file: summary.json, path: contrasts.raw-N2.ci_lo}
+    "ci_hi(raw-N2)": {file: summary.json, path: contrasts.raw-N2.ci_hi}
+    "mean(maps-N1)": {file: summary.json, path: contrasts.maps-N1.mean_delta}
+    "ci_lo(maps-N1)": {file: summary.json, path: contrasts.maps-N1.ci_lo}
+    "ci_hi(maps-N1)": {file: summary.json, path: contrasts.maps-N1.ci_hi}
+    "mean_dice(maps)": {file: summary.json, path: arms.maps.mean_dice}
+    "mean_dice(raw)": {file: summary.json, path: arms.raw.mean_dice}
+    "mean_dice(N1)": {file: summary.json, path: arms.N1.mean_dice}
+    "mean_dice(N2)": {file: summary.json, path: arms.N2.mean_dice}
+    n_grid_mismatch: {file: summary.json, path: n_grid_mismatch}
+gates:
+  # DRAFT: pending owner approval. NOT locked. lock_prereg.py refuses to lock while this says DRAFT.
+  # Read the open questions in prereg.md before approving. Anything neither GO nor PARK is REVISE.
+  # The expressions are those approved for isles24-ctp, which failed before producing any result.
+  # mean(raw-maps) is the mean per-patient Dice difference, raw minus maps, over the subjects with a
+  # non-empty lesion mask. 0.02 is the smallest effect of interest (SESOI), proposed by Claude: it
+  # appears in both gates and in H1, so changing it is one edit here.
+  # mde149_ucl(raw-maps): minimum detectable difference at 149 subjects with the sd replaced by its
+  # 80% upper confidence bound. "<= 0.02" means a 149-subject study would be 80% powered for 0.02.
+  # GO and PARK cannot both hold: GO needs ci_hi >= 0.02 and mde149_ucl <= 0.02, PARK needs the opposite
+  # of one of them.
+  approval: DRAFT
+  GO: "mde149_ucl(raw-maps) <= 0.02 and ci_hi(raw-maps) >= 0.02 and mean(raw-maps) > 0 and ci_lo(raw-N1) > 0"
+  PARK: "mde149_ucl(raw-maps) > 0.02 or ci_hi(raw-maps) < 0.02"
+results_columns:
+  per_patient.csv: [subject_id, arm, dice, gt_empty, gt_ml, pred_ml, abs_vol_err_ml, fold]
+  paired_stats.csv:
+    - contrast
+    - n
+    - mean_delta
+    - ci95_lo
+    - ci95_hi
+    - sd_delta
+    - share_patients_a_better
+    - "MDE_at_n149 (2.8*sd/sqrt149)"
+    - MDE_UCL80_at_n149
+  strata.csv: [lesion_size, n, maps, raw, N1, N2]
+  cases.csv:
+    - subject_id
+    - status
+    - T
+    - peak
+    - n_slices
+    - gt_ml_full
+    - vox_ml_down
+    - shape
+    - zooms
+    - nonfinite_ctp
+    - nonfinite_cbf
+    - nonfinite_cbv
+    - nonfinite_mtt
+    - nonfinite_tmax
+    - nonfinite_voxels
+    - block
+    - shard
+owner_notes: >-
+  UNKNOWN until the first real run: the download speed from a Kaggle kernel to Zenodo (the run stops
+  itself if fetching would pass max_fetch_hours), the free disk in /kaggle/temp, and the training time.

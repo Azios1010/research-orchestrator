@@ -1,0 +1,38 @@
+{
+  "run_id": "isles24-ctp-exp-001-pilot-20261127t042526z-a860b3",
+  "stage": "run",
+  "utc_time": "2026-11-27T04:30:31Z",
+  "ok": false,
+  "error_type": "RuntimeError",
+  "error_message": "grid mismatch in 40/40 cases. The mirror's CTP/maps are probably in native CTP space while the lesion mask is in NCCT space: use the Zenodo 'derivatives/*space-ncct*' files instead.",
+  "traceback_tail": "Traceback (most recent call last):\n  File \"/kaggle/src/script.py\", line 1040, in main\n    entry(str(bundle / manifest[\"config_path\"]), str(out))\n    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/lab_bundle_5v4nn8f9/directions/isles24-ctp/src/main.py\", line 124, in run\n    check_usable(cfg, chosen, meta_df, len(data))\n    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/lab_bundle_5v4nn8f9/directions/isles24-ctp/src/main.py\", line 68, in check_usable\n    raise RuntimeError(\n    ...<3 lines>...\n    )\nRuntimeError: grid mismatch in 40/40 cases. The mirror's CTP/maps are probably in native CTP space while the lesion mask is in NCCT space: use the Zenodo 'derivatives/*space-ncct*' files instead.",
+  "started_utc": "2026-11-27T04:25:32Z",
+  "finished_utc": "2026-11-27T04:30:31Z",
+  "history": [
+    {
+      "stage": "unpack",
+      "utc_time": "2026-11-27T04:25:32Z",
+      "ok": false
+    },
+    {
+      "stage": "requirements",
+      "utc_time": "2026-11-27T04:25:32Z",
+      "ok": false
+    },
+    {
+      "stage": "env",
+      "utc_time": "2026-11-27T04:25:32Z",
+      "ok": false
+    },
+    {
+      "stage": "run",
+      "utc_time": "2026-11-27T04:25:38Z",
+      "ok": false
+    },
+    {
+      "stage": "run",
+      "utc_time": "2026-11-27T04:30:31Z",
+      "ok": false
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+[lab] 2026-11-27T04:25:32Z run_id=isles24-ctp-exp-001-pilot-20261127t042526z-a860b3 commit=e7d7732b652dea0afc39154cb6eedf1dd6584a0b
+[lab] 2026-11-27T04:25:32Z stage=unpack
+[lab] 2026-11-27T04:25:32Z stage=requirements
+[lab] 2026-11-27T04:25:32Z all requirements already installed
+[lab] 2026-11-27T04:25:32Z stage=env
+[lab] 2026-11-27T04:25:38Z gpu=Tesla T4 torch=2.11.0+cu130
+[lab] 2026-11-27T04:25:38Z stage=run
+{'repo_id': 'hugging-science/isles24-stroke', 'n_total_shards': 149, 'n_cases': 40, 'seed': 2027, 't_window': 16, 't_pre': 5, 'n_baseline': 3, 'img_size': 128, 'min_brain_frac': 0.02, 'n_folds': 5, 'epochs': 40, 'batch_size': 16, 'lr': 0.001, 'base_ch': 32, 'lesion_slice_frac': 0.5, 'n_boot': 10000, 'arms': ['maps', 'raw', 'N1', 'N2'], 'max_grid_mismatch_frac': 0.2, 'max_empty_gt_frac': 0.25, 'save_sanity_png': True, 'cache_dir': '/kaggle/temp/isles24_cache', 'local_shard_dir': ''}
+shards: [0, 1, 3, 9, 11, 14, 15, 16, 26, 31, 32, 36, 43, 50, 52, 53, 55, 58, 63, 69, 71, 77, 79, 81, 85, 86, 95, 96, 103, 105, 106, 108, 117, 121, 122, 126, 131, 133, 135, 143]
+[1/40] shard 0: grid mismatch ['cta', 'ctp']  (11s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[2/40] shard 1: grid mismatch ['cta', 'ctp']  (18s)
+[3/40] shard 3: grid mismatch ['cta', 'ctp']  (26s)
+[4/40] shard 9: grid mismatch ['cta', 'ctp']  (35s)
+[5/40] shard 11: grid mismatch ['cta', 'ctp']  (43s)
+[6/40] shard 14: grid mismatch ['cta', 'ctp']  (51s)
+[7/40] shard 15: grid mismatch ['cta', 'ctp']  (58s)
+[8/40] shard 16: grid mismatch ['cta', 'ctp']  (66s)
+[9/40] shard 26: grid mismatch ['cta', 'ctp']  (75s)
+[10/40] shard 31: grid mismatch ['cta', 'ctp']  (81s)
+[11/40] shard 32: grid mismatch ['cta', 'ctp']  (88s)
+[12/40] shard 36: grid mismatch ['cta', 'ctp']  (95s)
+[13/40] shard 43: grid mismatch ['cta', 'ctp']  (103s)
+[14/40] shard 50: grid mismatch ['cta', 'ctp']  (110s)
+[15/40] shard 52: grid mismatch ['cta', 'ctp']  (118s)
+[16/40] shard 53: grid mismatch ['cta', 'ctp']  (126s)
+[17/40] shard 55: grid mismatch ['cta', 'ctp']  (134s)
+[18/40] shard 58: grid mismatch ['cta', 'ctp']  (142s)
+[19/40] shard 63: grid mismatch ['cta', 'ctp']  (149s)
+[20/40] shard 69: grid mismatch ['cta', 'ctp']  (157s)
+[21/40] shard 71: grid mismatch ['cta', 'ctp']  (163s)
+[22/40] shard 77: grid mismatch ['cta', 'ctp']  (171s)
+[23/40] shard 79: grid mismatch ['cta', 'ctp']  (179s)
+[24/40] shard 81: grid mismatch ['cta', 'ctp']  (186s)
+[25/40] shard 85: grid mismatch ['cta', 'ctp']  (194s)
+[26/40] shard 86: grid mismatch ['cta', 'ctp']  (201s)
+[27/40] shard 95: grid mismatch ['cta', 'ctp']  (208s)
+[28/40] shard 96: grid mismatch ['cta', 'ctp']  (214s)
+[29/40] shard 103: grid mismatch ['cta', 'ctp']  (220s)
+[30/40] shard 105: grid mismatch ['cta', 'ctp']  (226s)
+[31/40] shard 106: grid mismatch ['cta', 'ctp']  (233s)
+[32/40] shard 108: grid mismatch ['cta', 'ctp']  (240s)
+[33/40] shard 117: grid mismatch ['cta', 'ctp']  (246s)
+[34/40] shard 121: grid mismatch ['cta', 'ctp']  (252s)
+[35/40] shard 122: grid mismatch ['cta', 'ctp']  (259s)
+[36/40] shard 126: grid mismatch ['cta', 'ctp']  (266s)
+[37/40] shard 131: grid mismatch ['cta', 'ctp']  (271s)
+[38/40] shard 133: grid mismatch ['cta', 'ctp']  (277s)
+[39/40] shard 135: grid mismatch ['cta', 'ctp']  (284s)
+[40/40] shard 143: grid mismatch ['cta', 'ctp']  (291s)
+status
+grid mismatch ['cta', 'ctp']    40
+Traceback (most recent call last):
+  File "/kaggle/src/script.py", line 1056, in <module>
+    main()
+    ~~~~^^
+  File "/kaggle/src/script.py", line 1040, in main
+    entry(str(bundle / manifest["config_path"]), str(out))
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/lab_bundle_5v4nn8f9/directions/isles24-ctp/src/main.py", line 124, in run
+    check_usable(cfg, chosen, meta_df, len(data))
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/lab_bundle_5v4nn8f9/directions/isles24-ctp/src/main.py", line 68, in check_usable
+    raise RuntimeError(
+    ...<3 lines>...
+    )
+RuntimeError: grid mismatch in 40/40 cases. The mirror's CTP/maps are probably in native CTP space while the lesion mask is in NCCT space: use the Zenodo 'derivatives/*space-ncct*' files instead.
+/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 422984 bytes to __results__.html

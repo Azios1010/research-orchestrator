@@ -63,16 +63,16 @@
       "bundle_hash": "sha256:e9a435249549d37502aa66e1b25444d0c8abb766680d5b3d976fc31c060ddddc",
       "prereg_hash": "sha256:e3de04a77e74b155c17035df899ff6ed38a3af30919a089059ada322b59b830e",
       "l1_round": 1,
-      "status": "RUNNING",
+      "status": "COMPLETE",
       "submitted_at": "2026-11-27T07:17:28Z",
-      "last_checked_at": "2026-11-27T08:36:23Z",
-      "finished_at": null,
+      "last_checked_at": "2026-11-27T14:17:49Z",
+      "finished_at": "2026-11-27T14:17:49Z",
       "est_gpu_hours": 4.0,
-      "actual_gpu_hours": null,
+      "actual_gpu_hours": 1.895,
       "retries": 0,
       "retry_of": null,
       "result_path": "results/isles24-ctp-reg/exp_001_pilot/isles24-ctp-reg-exp-001-pilot-20261127t071728z-f2e4d4",
-      "issue_number": null,
+      "issue_number": 11,
       "failure_class": null
     }
   ]

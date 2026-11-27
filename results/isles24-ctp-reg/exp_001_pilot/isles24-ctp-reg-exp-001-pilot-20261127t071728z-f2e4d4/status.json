@@ -1,0 +1,43 @@
+{
+  "run_id": "isles24-ctp-reg-exp-001-pilot-20261127t071728z-f2e4d4",
+  "stage": "done",
+  "utc_time": "2026-11-27T09:11:16Z",
+  "ok": true,
+  "error_type": null,
+  "error_message": null,
+  "traceback_tail": null,
+  "started_utc": "2026-11-27T07:17:34Z",
+  "finished_utc": "2026-11-27T09:11:16Z",
+  "history": [
+    {
+      "stage": "unpack",
+      "utc_time": "2026-11-27T07:17:34Z",
+      "ok": false
+    },
+    {
+      "stage": "requirements",
+      "utc_time": "2026-11-27T07:17:34Z",
+      "ok": false
+    },
+    {
+      "stage": "env",
+      "utc_time": "2026-11-27T07:17:34Z",
+      "ok": false
+    },
+    {
+      "stage": "run",
+      "utc_time": "2026-11-27T07:17:42Z",
+      "ok": false
+    },
+    {
+      "stage": "verify_outputs",
+      "utc_time": "2026-11-27T09:11:16Z",
+      "ok": false
+    },
+    {
+      "stage": "done",
+      "utc_time": "2026-11-27T09:11:16Z",
+      "ok": true
+    }
+  ]
+}

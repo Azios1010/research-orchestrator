@@ -1,0 +1,22 @@
+{
+  "verdict": "PARK",
+  "gates": {
+    "GO": {
+      "expression": "mde149_ucl(raw-maps) <= 0.02 and ci_hi(raw-maps) >= 0.02 and mean(raw-maps) > 0 and ci_lo(raw-N1) > 0",
+      "result": false
+    },
+    "PARK": {
+      "expression": "mde149_ucl(raw-maps) > 0.02 or ci_hi(raw-maps) < 0.02",
+      "result": true
+    }
+  },
+  "values": {
+    "ci_hi(raw-maps)": 0.014456601759981598,
+    "ci_lo(raw-N1)": -0.0278539256759759,
+    "mde149_ucl(raw-maps)": 0.030068065772017014,
+    "mean(raw-maps)": -0.021741739694377364
+  },
+  "notes": [],
+  "prereg_hash": "sha256:e3de04a77e74b155c17035df899ff6ed38a3af30919a089059ada322b59b830e",
+  "provisional": true
+}

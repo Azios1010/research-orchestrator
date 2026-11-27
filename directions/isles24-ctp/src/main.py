@@ -16,7 +16,7 @@ import yaml
 
 from .arms import ARMS, make_folds, n2_permutations, n_channels
 from .data import choose_shards, load_cases
-from .evaluate import eval_patients, lesion_strata, paired_statistics, sanity_plot
+from .evaluate import eval_patients, lesion_strata, paired_statistics, primary_subjects, sanity_plot
 from .model import UNet2D
 from .train import device, train_one
 
@@ -39,6 +39,7 @@ DEFAULTS = {
     "n_boot": 10000,
     "arms": list(ARMS),
     "max_grid_mismatch_frac": 0.2,  # stop before training above this
+    "max_empty_gt_frac": 0.25,  # stop before training if more usable cases than this have an empty mask
     "save_sanity_png": True,
     "cache_dir": "",  # default: /kaggle/temp/cache on Kaggle, else the system temp folder
     "local_shard_dir": "",  # offline testing only
@@ -82,6 +83,20 @@ def check_usable(cfg: dict, chosen: list[int], meta_df: pd.DataFrame, n_usable: 
         )
 
 
+def check_empty_masks(cfg: dict, data: dict) -> None:
+    """Stop before training if too many cases have no lesion left after downsampling.
+
+    Those cases are left out of the paired statistics (evaluate.primary_subjects), so too many of
+    them would make the result about a different, smaller cohort than the one requested.
+    """
+    empty = sum(1 for arrays, _ in data.values() if not arrays["mask"].any())
+    if empty > cfg["max_empty_gt_frac"] * len(data):
+        raise RuntimeError(
+            f"{empty}/{len(data)} usable cases have an empty lesion mask after downsampling "
+            f"(allowed: {cfg['max_empty_gt_frac']:.0%}); the paired statistics would drop them"
+        )
+
+
 def resume_rows(out: Path, key: str) -> list[dict]:
     """Rows already computed by an earlier, interrupted run with the same settings and patients."""
     results, marker = out / "per_patient.csv", out / "resume_key.json"
@@ -107,6 +122,7 @@ def run(config_path: str, out_dir: str) -> None:
     meta_df.to_csv(out / "cases.csv", index=False)
     print(meta_df["status"].value_counts().to_string())
     check_usable(cfg, chosen, meta_df, len(data))
+    check_empty_masks(cfg, data)
 
     if cfg["save_sanity_png"]:
         try:
@@ -157,8 +173,11 @@ def run(config_path: str, out_dir: str) -> None:
 def write_summary(
     out: Path, cfg: dict, res: pd.DataFrame, meta_df, n_usable: int, n_requested: int, dev: str
 ):
-    wide = res.pivot_table(index="subject_id", columns="arm", values="dice")
+    primary = primary_subjects(res)
+    n_excluded = res["subject_id"].nunique() - primary["subject_id"].nunique()
+    wide = primary.pivot_table(index="subject_id", columns="arm", values="dice")
     vol = res.pivot_table(index="subject_id", columns="arm", values="abs_vol_err_ml")
+    print(f"{len(wide)} subjects in the paired statistics, {n_excluded} excluded (empty lesion mask)")
     print("Mean Dice per arm:\n", wide.mean().round(4))
     print("Median abs volume error (mL):\n", vol.median().round(2))
     stats, exact = paired_statistics(res, cfg)
@@ -172,6 +191,8 @@ def write_summary(
         "device": dev,
         "n_requested": n_requested,
         "n_usable": n_usable,
+        "n_primary": int(len(wide)),
+        "n_excluded_empty_gt": int(n_excluded),
         "n_grid_mismatch": int(meta_df["status"].astype(str).str.startswith("grid mismatch").sum()),
         "mean_dice": wide.mean().round(4).to_dict(),
         "paired": stats.to_dict("records"),

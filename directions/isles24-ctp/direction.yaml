@@ -1,6 +1,6 @@
 slug: isles24-ctp
 title: "ISLES'24: raw 4D CTP vs perfusion maps for follow-up infarct segmentation"
-status: SCAFFOLDED
+status: L0_PASS
 question: >-
   In a small pilot, does a 2D U-Net given peak-aligned raw CTP frames segment the follow-up infarct
   better (per-patient Dice) than the same U-Net given perfusion maps, and does any gain depend on
@@ -8,7 +8,7 @@ question: >-
 hypotheses:
   - id: H1
     statement: "HYPOTHESIS: raw has a higher mean per-patient Dice than maps."
-    falsified_if: "the 95% bootstrap CI of raw - maps lies at or below 0 (ci_hi(raw-maps) <= 0)"
+    falsified_if: "the 95% bootstrap CI of raw - maps lies below the smallest effect of interest 0.02 (ci_hi(raw-maps) < 0.02)"
   - id: H2
     statement: "HYPOTHESIS: a raw advantage needs temporal information; raw beats N1 (temporal mean and max only)."
     falsified_if: "ci_hi(raw-N1) <= 0"
@@ -37,11 +37,14 @@ scorecard_map:
   n_subjects_requested: {file: summary.json, path: n_requested}
   n_subjects_usable: {file: summary.json, path: n_usable}
   metrics:
+    n_primary: {file: summary.json, path: n_primary}
+    n_excluded_empty_gt: {file: summary.json, path: n_excluded_empty_gt}
     "mean(raw-maps)": {file: summary.json, path: contrasts.raw-maps.mean_delta}
     "ci_lo(raw-maps)": {file: summary.json, path: contrasts.raw-maps.ci_lo}
     "ci_hi(raw-maps)": {file: summary.json, path: contrasts.raw-maps.ci_hi}
     "sd_delta(raw-maps)": {file: summary.json, path: contrasts.raw-maps.sd_delta}
     "mde149(raw-maps)": {file: summary.json, path: contrasts.raw-maps.mde149}
+    "mde149_ucl(raw-maps)": {file: summary.json, path: contrasts.raw-maps.mde149_ucl}
     "share_a_better(raw-maps)": {file: summary.json, path: contrasts.raw-maps.share_a_better}
     "mean(raw-N1)": {file: summary.json, path: contrasts.raw-N1.mean_delta}
     "ci_lo(raw-N1)": {file: summary.json, path: contrasts.raw-N1.ci_lo}
@@ -60,10 +63,46 @@ scorecard_map:
 gates:
   # DRAFT: pending owner approval. NOT locked. lock_prereg.py refuses to lock while this says DRAFT.
   # Read the open questions in prereg.md before approving. Anything neither GO nor PARK is REVISE.
-  # mean(raw-maps) is the mean per-patient Dice difference, raw minus maps.
+  # mean(raw-maps) is the mean per-patient Dice difference, raw minus maps, over the subjects with a
+  # non-empty lesion mask. 0.02 is the smallest effect of interest (SESOI), proposed by Claude and
+  # NOT yet chosen by the owner: it appears in both gates and in H1, so changing it is one edit here.
+  # mde149_ucl(raw-maps): minimum detectable difference at 149 subjects with the sd replaced by its
+  # 80% upper confidence bound. "<= 0.02" means a 149-subject study would be 80% powered for 0.02.
+  # GO and PARK cannot both hold: GO needs ci_hi >= 0.02 and mde149_ucl <= 0.02, PARK needs the opposite
+  # of one of them.
   approval: DRAFT
-  GO: "mean(raw-maps) > 0.02 and ci_lo(raw-N1) > 0 and mde149(raw-maps) <= 0.03"
-  PARK: "ci_hi(raw-maps) < 0 or (mean(raw-maps) <= 0 and mde149(raw-maps) > 0.03)"
+  GO: "mde149_ucl(raw-maps) <= 0.02 and ci_hi(raw-maps) >= 0.02 and mean(raw-maps) > 0 and ci_lo(raw-N1) > 0"
+  PARK: "mde149_ucl(raw-maps) > 0.02 or ci_hi(raw-maps) < 0.02"
+results_columns:
+  per_patient.csv: [subject_id, arm, dice, gt_empty, gt_ml, pred_ml, abs_vol_err_ml, fold]
+  paired_stats.csv:
+    - contrast
+    - n
+    - mean_delta
+    - ci95_lo
+    - ci95_hi
+    - sd_delta
+    - share_patients_a_better
+    - "MDE_at_n149 (2.8*sd/sqrt149)"
+    - MDE_UCL80_at_n149
+  strata.csv: [lesion_size, n, maps, raw, N1, N2]
+  cases.csv:
+    - subject_id
+    - status
+    - T
+    - peak
+    - n_slices
+    - gt_ml_full
+    - vox_ml_down
+    - shape
+    - zooms
+    - nonfinite_ctp
+    - nonfinite_cbf
+    - nonfinite_cbv
+    - nonfinite_mtt
+    - nonfinite_tmax
+    - nonfinite_voxels
+    - shard
 owner_notes: >-
   UNKNOWN until the first real run: whether the mirror is reachable without a token, whether CTP,
   maps and lesion mask share one voxel grid, and the real GPU time.

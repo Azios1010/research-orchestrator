@@ -32,8 +32,9 @@ def test_isles_gates_are_draft_and_unlocked():
     direction = load_direction(REPO / "directions" / "isles24-ctp")
     assert direction["gates"] == {
         "approval": "DRAFT",
-        "GO": "mean(raw-maps) > 0.02 and ci_lo(raw-N1) > 0 and mde149(raw-maps) <= 0.03",
-        "PARK": "ci_hi(raw-maps) < 0 or (mean(raw-maps) <= 0 and mde149(raw-maps) > 0.03)",
+        "GO": "mde149_ucl(raw-maps) <= 0.02 and ci_hi(raw-maps) >= 0.02 and mean(raw-maps) > 0 "
+              "and ci_lo(raw-N1) > 0",
+        "PARK": "mde149_ucl(raw-maps) > 0.02 or ci_hi(raw-maps) < 0.02",
     }
     assert direction["scorecard_map"]["metrics"]["mean(raw-maps)"] == {
         "file": "summary.json", "path": "contrasts.raw-maps.mean_delta",

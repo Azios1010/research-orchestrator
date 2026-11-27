@@ -29,13 +29,17 @@ def nifti_bytes(array: np.ndarray, compress: bool) -> bytes:
     return gzip.compress(raw, compresslevel=1) if compress else raw
 
 
-def make_case(rng: np.random.Generator, grid_mismatch: bool = False) -> dict[str, np.ndarray]:
+def make_case(
+    rng: np.random.Generator, grid_mismatch: bool = False, empty_lesion: bool = False
+) -> dict[str, np.ndarray]:
     """An elliptic 'brain' in air with a large, obvious 'lesion' that arrives late."""
     x, y, z = np.meshgrid(*[np.linspace(-1, 1, n) for n in SHAPE], indexing="ij")
     brain = (x / 0.8) ** 2 + (y / 0.8) ** 2 <= 1
     side = rng.choice([-1.0, 1.0])
     centre_y = rng.uniform(-0.15, 0.15)
     lesion = brain & (((x - side * 0.35) / 0.38) ** 2 + ((y - centre_y) / 0.45) ** 2 + (z / 0.95) ** 2 <= 1)
+    if empty_lesion:  # a follow-up scan without a visible infarct
+        lesion = np.zeros_like(lesion)
 
     def tissue(brain_value, lesion_value, noise):
         volume = np.where(brain, brain_value, 0.0) + rng.normal(0, noise, SHAPE) * brain
@@ -107,13 +111,14 @@ def make_dataset(
     grid_mismatch: tuple[int, ...] = (),
     seed: int = 0,
     nonfinite: tuple[int, ...] = (),
+    empty_lesion: tuple[int, ...] = (),
 ) -> Path:
     rng = np.random.default_rng(seed)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     for index in range(n_shards):
         path = out_dir / f"train-{index:05d}-of-{n_shards:05d}.parquet"
-        arrays = make_case(rng, grid_mismatch=index in grid_mismatch)
+        arrays = make_case(rng, grid_mismatch=index in grid_mismatch, empty_lesion=index in empty_lesion)
         if index in nonfinite:
             arrays = add_nonfinite(arrays)
         write_shard(path, f"sub-fake{index:04d}", arrays)

@@ -57,6 +57,29 @@ def test_l0_smoke(tmp_path):
     assert (cases["nonfinite_voxels"].drop("sub-fake0002") == 0).all()
 
 
+def test_an_empty_mask_patient_is_left_out_of_the_statistics(tmp_path):
+    run = smoke(tmp_path, empty_lesion=(1,))
+
+    assert run.status["ok"], f"{run.status['traceback_tail']}\n{run.log}"
+    assert l0_problems(run) == []
+    rows = pd.read_csv(run.out_dir / "per_patient.csv")
+    assert set(rows.loc[rows["gt_empty"], "subject_id"]) == {"sub-fake0001"}
+    assert len(rows) == 6 * 4  # still trained and evaluated
+    scorecard = l0_scorecard(run)
+    assert (scorecard["metrics"]["n_primary"], scorecard["metrics"]["n_excluded_empty_gt"]) == (5, 1)
+    paired = pd.read_csv(run.out_dir / "paired_stats.csv")
+    assert set(paired["n"]) == {5}
+    assert "mde149_ucl(raw-maps)" in scorecard["metrics"]
+
+
+def test_too_many_empty_masks_abort_before_training(tmp_path):
+    run = smoke(tmp_path, empty_lesion=(0, 1, 2))
+
+    assert run.status["ok"] is False
+    assert "3/6 usable cases have an empty lesion mask" in run.status["error_message"]
+    assert not (run.out_dir / "per_patient.csv").exists()
+
+
 def test_grid_mismatch_aborts_before_training(tmp_path):
     run = smoke(tmp_path, grid_mismatch=(0, 1, 2))
 

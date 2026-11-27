@@ -10,6 +10,7 @@ import pandas as pd
 # Integer ratios, so the boundary cases are exact.
 MIN_USABLE = (4, 5)  # usable cases must be at least 80% of the requested ones
 MAX_GRID_MISMATCH = (1, 5)  # more than 20% grid-mismatch cases invalidates the run
+MAX_EMPTY_GT = (1, 4)  # more than 25% of usable cases with an empty mask invalidates the run
 
 
 def check(result_dir: Path) -> list[str]:
@@ -33,6 +34,14 @@ def check(result_dir: Path) -> list[str]:
     mismatch = int(status.str.startswith("grid mismatch").sum())
     if mismatch * MAX_GRID_MISMATCH[1] > requested * MAX_GRID_MISMATCH[0]:
         problems.append(f"grid mismatch in {mismatch}/{requested} cases (more than 20%): abort")
+
+    excluded, primary = summary["n_excluded_empty_gt"], summary["n_primary"]
+    if excluded * MAX_EMPTY_GT[1] > usable * MAX_EMPTY_GT[0]:
+        problems.append(f"{excluded}/{usable} usable cases have an empty lesion mask (more than 25%)")
+    if primary + excluded != usable:
+        problems.append(f"n_primary {primary} + n_excluded_empty_gt {excluded} is not the {usable} usable")
+    if primary < 2:
+        problems.append(f"only {primary} subject(s) in the paired statistics (need at least 2)")
 
     present = set(zip(rows["arm"], rows["fold"], strict=True))
     for arm in arms:

@@ -3,10 +3,13 @@
 directions:
   isles24-ctp:
     title: 'ISLES''24: raw 4D CTP vs perfusion maps for follow-up infarct segmentation'
-    status: SCAFFOLDED
+    status: L0_PASS
     path: directions/isles24-ctp
     created: '2026-11-26'
-    l0: null
+    l0:
+      passed_at: '2026-11-26T17:56:48Z'
+      code_hash: sha256:ea504f15d8b7e7fd55fbcd5fd2a52f8896a52d588d3e7eb30b779cdebedbd670
+      labcore_hash: sha256:dc36602ba195d6a3aa7f2ea6434a426c4527361f7b5163efd0a73e077f73edd1
     l1_rounds: 0
     prereg_lock: null
     lock_history: []

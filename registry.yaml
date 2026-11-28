@@ -57,3 +57,18 @@ directions:
     lock_history: []
     verdict: null
     graduated_to: null
+  wbc-patient-gap:
+    title: 'Frozen features: does seeing other cells of the same patient help a linear probe on confusable
+      white cells?'
+    status: L0_PASS
+    path: directions/wbc-patient-gap
+    created: '2026-11-28'
+    l0:
+      passed_at: '2026-11-28T08:12:53Z'
+      code_hash: sha256:44c39fbc64d416998fbd21e723a754f1ac93d7221c8947982537e9b459cc03c9
+      labcore_hash: sha256:dc36602ba195d6a3aa7f2ea6434a426c4527361f7b5163efd0a73e077f73edd1
+    l1_rounds: 0
+    prereg_lock: null
+    lock_history: []
+    verdict: null
+    graduated_to: null

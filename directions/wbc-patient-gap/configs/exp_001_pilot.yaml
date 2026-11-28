@@ -1,0 +1,46 @@
+# exp_001_pilot: frozen DinoBloom-S features of DeepAPL, linear probe, 5 patient folds x 3 split seeds.
+compute:
+  # INTERPRETATION, a guess: about 1.1 GB of downloads, features for about 27,000 images, 30 probe fits
+  # on the CPU and the bootstrap. The watcher marks the run TIMEOUT after 2 x this value.
+  est_gpu_hours: 0.5
+params:
+  backbone: dinobloom-s
+  fold_seed: 4101
+  split_seeds: [11, 12, 13]
+  boot_seed: 4102
+  n_folds: 5
+  # Fixed before any result; nothing is tuned. The train features have unit length.
+  probe_c: 1.0
+  probe_class_weight: balanced
+  probe_max_iter: 5000
+  probe_tol: 0.0001
+  knn_k: 20
+  n_boot: 10000
+  batch_size: 256
+  num_workers: 4
+  min_free_gb: 3
+  # Counted on the figshare archive after the duplicate rules; the run stops if they differ.
+  expected_patients: 106
+  expected_conflicting_groups: 33
+  expected_deepapl:  # class: [images, patients]
+    "Blast, no lineage spec": [3295, 92]
+    "Promyelocyte": [685, 47]
+    "Myelocyte": [180, 40]
+    "Metamyelocyte": [73, 29]
+    "Band neutrophils": [169, 50]
+    "Segmented neutrophils": [2081, 101]
+    "Lymphocyte": [3427, 105]
+    "Lymphocyte, variant": [469, 65]
+    "Monocyte": [1308, 84]
+    "Eosinophils": [108, 40]
+    "Basophil": [50, 30]
+    "Erythroblast": [519, 60]
+  expected_acevedo:  # folder: images
+    neutrophil: 3329
+    eosinophil: 3117
+    basophil: 1218
+    lymphocyte: 1214
+    monocyte: 1420
+    ig: 2895
+    erythroblast: 1551
+    platelet: 2348

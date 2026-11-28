@@ -85,6 +85,7 @@ The run counts again and stops before any feature is computed if a count differs
   as an external test set. The training data include a bone marrow set, the AML sets of Matek and of
   Hehr, Raabin, and an unnamed set ("LabAnonymous") of over 40,000 peripheral blood images. Neither the
   text nor the references mention Sidhom's APL data.
+- UNKNOWN: whether any DeepAPL image is part of the unnamed set.
 
 ## Design (`configs/exp_001_pilot.yaml`)
 

@@ -1,0 +1,9 @@
+# Installed on Kaggle only if missing (the Kaggle image already ships most of these).
+# Unpinned on purpose, so a preinstalled GPU build of torch is never replaced.
+# No torchvision: preprocessing uses Pillow and numpy.
+torch
+numpy
+pandas
+pyyaml
+pillow
+scikit-learn

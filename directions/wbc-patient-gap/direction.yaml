@@ -1,0 +1,99 @@
+slug: wbc-patient-gap
+title: "Frozen features: does seeing other cells of the same patient help a linear probe on confusable white cells?"
+status: L0_PASS
+question: >-
+  With frozen DinoBloom-S features, does a linear probe classify a patient's confusable neutrophil
+  maturation cells better when other cells of that patient are in its train set than when no cell of
+  that patient is?
+hypotheses:
+  - id: H1
+    statement: >-
+      HYPOTHESIS: replacing train cells with other cells of the evaluated patients, class by class,
+      raises macro-F1 over segmented, band, metamyelocyte, myelocyte and promyelocyte by 0.02 or more.
+    falsified_if: >-
+      the 95% patient bootstrap interval of shared - disjoint lies below the smallest effect of interest
+      0.02 (ci_hi(shared-disjoint) < 0.02)
+data:
+  source: >-
+    DeepAPL single-cell images grouped by patient (figshare record 14294675, version 1). External
+    description only: the Acevedo peripheral blood cell images (Mendeley Data 10.17632/snkd93bnjr.1).
+    Features: DinoBloom-S weights (Zenodo record 10908163).
+  license: >-
+    DeepAPL figshare record: CC0 (confirmed by the owner on 2026-11-28). Acevedo: CC BY 4.0.
+    DinoBloom-S weights record: CC BY 4.0. dinov2 code: Apache-2.0.
+  access: >-
+    Downloaded inside the kernel over HTTP, checked by size and sha256, and read from the zip files
+    (src/data.py, src/backbone.py). The figshare metadata table is never downloaded. Nothing is committed.
+  contains_patient_data: true
+compute:
+  l1_gpu_hours_cap: 2
+  max_l1_rounds: 2
+entrypoint:
+  module: src.main
+  function: run
+outputs:
+  - summary.json
+  - dataset_counts.csv
+  - folds.csv
+  - split_counts.csv
+  - patient_counts.csv
+  - contrasts.csv
+  - per_class.csv
+  - external.csv
+scorecard_map:
+  n_subjects_requested: {file: summary.json, path: n_requested}
+  n_subjects_usable: {file: summary.json, path: n_usable}
+  metrics:
+    "mean(shared-disjoint)": {file: summary.json, path: contrasts.shared-disjoint.mean_delta}
+    "ci_lo(shared-disjoint)": {file: summary.json, path: contrasts.shared-disjoint.ci_lo}
+    "ci_hi(shared-disjoint)": {file: summary.json, path: contrasts.shared-disjoint.ci_hi}
+    "macro_f1(disjoint)": {file: summary.json, path: arms.disjoint.macro_f1_primary}
+    "macro_f1(shared)": {file: summary.json, path: arms.shared.macro_f1_primary}
+    "macro_f1_all12(disjoint)": {file: summary.json, path: arms.disjoint.macro_f1_all12}
+    "macro_f1_all12(shared)": {file: summary.json, path: arms.shared.macro_f1_all12}
+    "knn_macro_f1(disjoint)": {file: summary.json, path: arms.disjoint.knn_macro_f1_primary}
+    "knn_macro_f1(shared)": {file: summary.json, path: arms.shared.knn_macro_f1_primary}
+    n_eval_cells_per_seed: {file: summary.json, path: n_eval_cells_per_seed}
+    n_donor_cells_per_fold: {file: summary.json, path: n_donor_cells_in_shared_train_per_fold}
+    n_eval_in_train: {file: summary.json, path: checks.eval_in_train}
+    n_test_patient_cells_in_disjoint_train: {file: summary.json, path: checks.test_patient_cells_in_disjoint_train}
+    n_unconverged_probes: {file: summary.json, path: checks.unconverged_probes}
+    same_patient_share: {file: summary.json, path: neighbours.same_patient_share}
+    same_patient_share_at_random: {file: summary.json, path: neighbours.same_patient_share_at_random}
+    same_patient_share_at_random_same_class: {file: summary.json, path: neighbours.same_patient_share_at_random_same_class}
+    acevedo_macro_f1_7: {file: summary.json, path: external.acevedo_macro_f1_7}
+    heldout_macro_f1_7: {file: summary.json, path: external.deepapl_heldout_macro_f1_7}
+gates:
+  # DRAFT: pending owner approval. NOT locked. lock_prereg.py refuses to lock while this says DRAFT.
+  # mean(shared-disjoint) is the difference in macro-F1 over the five primary classes, shared minus
+  # disjoint, computed from counts pooled over patients and averaged over the split seeds. It follows
+  # the lab's field names; it is not a mean over patients.
+  # 0.02 is the smallest effect of interest (SESOI), proposed by Claude and kept by the owner on
+  # 2026-11-28. It appears in both gates and in H1. Anything neither GO nor PARK is REVISE.
+  approval: DRAFT
+  GO: "ci_lo(shared-disjoint) > 0 and mean(shared-disjoint) >= 0.02"
+  PARK: "ci_hi(shared-disjoint) < 0.02"
+results_columns:
+  dataset_counts.csv: [dataset, class_name, images, patients, expected_images, expected_patients]
+  folds.csv:
+    - fold
+    - split_seed
+    - arm
+    - n_test_patients
+    - n_train
+    - n_train_donor
+    - n_eval
+    - eval_set_hash
+    - n_eval_in_train
+    - n_eval_hash_in_train
+    - n_test_patient_cells_in_train
+    - probe_iterations
+    - probe_converged
+  split_counts.csv: [fold, split_seed, arm, class_name, n_train, n_train_donor, n_eval]
+  patient_counts.csv: [patient_index, split_seed, arm, class_name, tp, fp, fn]
+  contrasts.csv: [contrast, method, metric, gated, n_patients, mean_delta, ci_lo, ci_hi]
+  per_class.csv: [method, arm, class_name, f1, n_eval_per_seed]
+  external.csv: [dataset, arm, group_name, n_cells, recall, f1]
+owner_notes: >-
+  UNKNOWN until the first real run: whether figshare, Mendeley, Zenodo and the torch.hub download from
+  GitHub work from a Kaggle kernel, and the run time.

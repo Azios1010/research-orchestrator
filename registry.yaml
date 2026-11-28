@@ -40,7 +40,7 @@ directions:
     graduated_to: null
   isles24-ctp-reg:
     title: 'ISLES''24: raw 4D CTP vs perfusion maps, with the CTP registered to NCCT'
-    status: L1_RUNNING
+    status: VERDICT
     path: directions/isles24-ctp-reg
     created: '2026-11-27'
     l0:
@@ -55,5 +55,5 @@ directions:
       stats_version: 0.2.0
       hash_scheme: 2
     lock_history: []
-    verdict: null
+    verdict: PARK
     graduated_to: null

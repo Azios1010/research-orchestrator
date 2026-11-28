@@ -1,6 +1,6 @@
 slug: isles24-ctp-reg
 title: "ISLES'24: raw 4D CTP vs perfusion maps, with the CTP registered to NCCT"
-status: L1_RUNNING
+status: VERDICT
 question: >-
   In a small pilot, does a 2D U-Net given peak-aligned raw CTP frames segment the follow-up infarct
   better (per-patient Dice) than the same U-Net given perfusion maps, and does any gain depend on
